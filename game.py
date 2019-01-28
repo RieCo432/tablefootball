@@ -18,10 +18,12 @@ class Table:
     player_angle_hit_limit = pi / 6
     player_max_lin_vel = 20
     player_max_rot_vel = 0.2 * pi
+    player_hit_cin_energy_efficiency = 0.1
 
-    ball_radius = 25
+    ball_radius = 20
     ball_color = (255, 255, 255)
     ball_max_vel = 1
+    ball_table_friction_coefficient = 0.001
 
     stick_width = 10
     stick_color = (127, 127, 127)
@@ -189,22 +191,40 @@ class Ball:
                 # print(collision_box)
                 # print((collision_box["center_y"] + Table.player_width / 2) <= (self.pos_y + Table.ball_radius))
                 # print((self.pos_y - Table.ball_radius) <= (collision_box["center_y"] + Table.player_width / 2))
-                if ((collision_box["center_y"] + Table.player_width / 2) <= (self.pos_y + Table.ball_radius)) and ((self.pos_y - Table.ball_radius) <= (collision_box["center_y"] + Table.player_width / 2)):
-                    #print("correct height detected")
-                    if ((collision_box["center_x"] - Table.player_thickness / 2) <= (self.pos_x + Table.ball_radius)) and ((self.pos_x - Table.ball_radius) <= (collision_box["center_x"] + Table.player_thickness / 2)):
-                        self.vel_x = opponent.sticks[collision_box["playerRole"]].rot_vel * Table.player_height
+                if (collision_box["center_y"] - Table.player_width / 2) <= self.pos_y <= (collision_box["center_y"] + Table.player_width / 2):
+                    # print("correct height detected")
+                    if ((self.pos_x + Table.ball_radius) >= collision_box["center_x"] - Table.player_thickness / 2) and ((self.pos_x - Table.ball_radius) <= (collision_box["center_x"] + Table.player_thickness / 2)):
+                        if self.vel_x < opponent.sticks[collision_box["playerRole"]].rot_vel * Table.player_height:  # Ball hit right side of hitbox
+                            self.pos_x = collision_box["center_x"] + Table.player_thickness / 2 + Table.ball_radius
+                        elif self.vel_x > opponent.sticks[collision_box["playerRole"]].rot_vel * Table.player_height:  # Ball hit left side of hitbox
+                            self.pos_x = collision_box["center_x"] - Table.player_thickness / 2 - Table.ball_radius
+                        self.vel_x = (- self.vel_x) * Table.player_hit_cin_energy_efficiency + opponent.sticks[collision_box["playerRole"]].rot_vel * Table.player_height  # Change velocity sign and account for energy loss and add player rot speed
+                        self.vel_y = - self.vel_y * Table.player_hit_cin_energy_efficiency  # Change velocity sign and account for energy loss
+
+                elif (collision_box["center_x"] - Table.player_thickness / 2) <= self.pos_x <= (collision_box["center_x"] + Table.player_thickness / 2):
+                    if ((self.pos_y + Table.ball_radius) >= collision_box["center_y"] - Table.player_width / 2) and ((self.pos_y - Table.ball_radius) <= collision_box["center_y"] + Table.player_width / 2):
+                        if self.vel_y < opponent.sticks[collision_box["playerRole"]].lin_vel:  # Ball hit lower side of hitbox
+                            self.pos_y = collision_box["center_y"] + Table.player_width / 2 + Table.ball_radius
+                        elif self.vel_y > opponent.sticks[collision_box["playerRole"]].lin_vel:  # Ball hit upper side of hitbox
+                            self.pos_y = collision_box["center_y"] - Table.player_width / 2 - Table.ball_radius
+                        self.vel_x = (- self.vel_x) * Table.player_hit_cin_energy_efficiency   # Change velocity sign and account for energy loss
+                        self.vel_y = - self.vel_y * Table.player_hit_cin_energy_efficiency + opponent.sticks[collision_box["playerRole"]].lin_vel  # Change velocity sign and account for energy loss and add player lin speed
 
     def update(self):
         self.vel_x += self.acc_x
         self.vel_y += self.acc_y
 
-        self.pos_x = int(round(self.pos_x + self.vel_x))
-        self.pos_y = int(round(self.pos_y + self.vel_y))
+        # Account for friction
+        self.vel_x -= Table.ball_table_friction_coefficient * (self.vel_x**2)
+        self.vel_y -= Table.ball_table_friction_coefficient * (self.vel_y**2)
+
+        self.pos_x += self.vel_x
+        self.pos_y += self.vel_y
 
         self.check_collision()
 
     def draw(self):
-        pygame.draw.circle(screen, Table.ball_color, (self.pos_x, self.pos_y), Table.ball_radius, 0)
+        pygame.draw.circle(screen, Table.ball_color, (int(round(self.pos_x)), int(round(self.pos_y))), Table.ball_radius, 0)
 
 
 class Game:

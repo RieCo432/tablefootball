@@ -59,6 +59,7 @@ def mod2pi(angle):  # Simple function to emulate modulo 2 pi to keep angle value
 
     return angle
 
+
 def get_dist(x1, y1, x2, y2):
     return sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
@@ -102,7 +103,7 @@ class PlayerStick:
 
         self.rot_acc = 0.0  # Stick starts without any rotational acceleration
         self.rot_vel = 0.0  # Stick starts without any rotational velocity
-        self.rot_pos = pi / 2  # Stick starts at down position (=0 radians)
+        self.rot_pos = 0.0  # Stick starts at down position (=0 radians)
 
         if opponent_num == 0:
             self.color = (0, 0, 255)  # Player 1 is blue
@@ -262,11 +263,23 @@ class Ball:
                 self.pos_x = Table.ball_radius + 1
                 self.vel_x = (- self.vel_x) * Table.edge_hit_cin_energy_efficiency
                 self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
+                if ((self.pos_y - Table.ball_radius) >= (Table.width / 2 - Table.goal_width / 2)) and ((self.pos_y + Table.ball_radius) <= (Table.width / 2 + Table.goal_width / 2)):
+                    self.game.opponents[1].score += 1
+                    self.pos_x = Table.length / 2
+                    self.pos_y = Table.width / 2
+                    self.vel_x = 0
+                    self.vel_y = 0
 
             if self.pos_x + Table.ball_radius >= Table.length:  # Right edge collision
                 self.pos_x = Table.length - Table.ball_radius - 1
                 self.vel_x = (- self.vel_x) * Table.edge_hit_cin_energy_efficiency
                 self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
+                if ((self.pos_y - Table.ball_radius) >= (Table.width / 2 - Table.goal_width / 2)) and ((self.pos_y + Table.ball_radius) <= (Table.width / 2 + Table.goal_width / 2)):
+                    self.game.opponents[0].score += 1
+                    self.pos_x = Table.length / 2
+                    self.pos_y = Table.width / 2
+                    self.vel_x = 0
+                    self.vel_y = 0
 
             if self.pos_y - Table.ball_radius <= 0:  # Upper edge collision
                 self.pos_y = Table.ball_radius + 1
@@ -326,6 +339,8 @@ class Game:
         else:
             self.max_score = self.opponents[1].score
             self.best_player = 1
+
+        pygame.display.set_caption("Player 1: %d                Player 2: %d" % (self.opponents[0].score, self.opponents[1].score))
 
         pygame.draw.rect(screen, Table.goal_color, (0, Table.width/2 - Table.goal_width/2, Table.goal_thickness, Table.goal_width), Table.goal_border)  # Draw goal 1
         pygame.draw.rect(screen, Table.goal_color, (Table.length - Table.goal_thickness, Table.width / 2 - Table.goal_width / 2, Table.goal_thickness, Table.goal_width), Table.goal_border)  # Draw goal 2

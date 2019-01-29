@@ -1,7 +1,7 @@
 import pygame
 from time import sleep
 from os import environ
-from math import sin, floor, pi, sqrt, tan
+from math import sin, floor, pi, sqrt, tan, atan
 
 parallel_games = 1
 
@@ -237,9 +237,11 @@ class Ball:
                         c = - 2 * (self.vel_x * x + self.vel_y * y) / (x**2 + y**2)
                         self.vel_x = (self.vel_x + c * x)  # * Table.player_hit_cin_energy_efficiency
                         self.vel_y = (self.vel_y + c * y)  # * Table.player_hit_cin_energy_efficiency
-                        a = tan((self.pos_y - (collision_box["center_y"] - Table.player_width / 2) / ((collision_box["center_x"]) + Table.player_thickness / 2)))
-                        self.pos_x = collision_box["center_x"] + Table.player_thickness / 2 - sqrt((Table.ball_radius + 1)**2 / (1 + (tan(a))**2))
-                        self.pos_y = (collision_box["center_y"] - Table.player_width / 2) + tan(a) * sqrt((Table.ball_radius + 1)**2 / (1 + (tan(a))**2))
+                        tan_a = (self.pos_y - (collision_box["center_y"] - Table.player_width / 2) / ((collision_box["center_x"]) + Table.player_thickness / 2))
+                        self.pos_x = (Table.ball_radius + 1) / (sqrt(1 + tan_a**2)) + (collision_box["center_x"] + Table.player_thickness / 2)
+                        self.pos_y = ((collision_box["center_x"] + Table.player_thickness / 2) - self.pos_x) * tan_a + (collision_box["center_y"] - Table.player_width / 2)
+                        print("x", self.pos_x)
+                        print("y", self.pos_y)
 
                 elif (self.pos_x >= collision_box["center_x"] + Table.player_thickness / 2) and (self.pos_y >= collision_box["center_y"] + Table.player_width / 2):  # Lower right corner
                     if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] + Table.player_thickness / 2, collision_box["center_y"] + Table.player_width / 2) <= Table.ball_radius:  # Collsions

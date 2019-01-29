@@ -1,7 +1,7 @@
 import pygame
 from time import sleep
 from os import environ
-from math import sin, floor, pi
+from math import sin, floor, pi, sqrt, tan
 
 parallel_games = 1
 
@@ -10,6 +10,7 @@ class Table:
     # Various properties of the table and its representation
     width = 600
     length = 1200
+    edge_hit_cin_energy_efficiency = 0.95
 
     player_width = 40
     player_thickness = 20
@@ -49,7 +50,7 @@ class PlayerRole:  # Bind player role to an integer
     attack = 3
 
 
-def mod2Pi(angle):  # Simple function to emulate modulo 2 pi to keep angle value in range for the collision boxes
+def mod2pi(angle):  # Simple function to emulate modulo 2 pi to keep angle value in range for the collision boxes
 
     while angle < pi:
         angle += 2 * pi
@@ -57,6 +58,9 @@ def mod2Pi(angle):  # Simple function to emulate modulo 2 pi to keep angle value
         angle -= 2 * pi
 
     return angle
+
+def get_dist(x1, y1, x2, y2):
+    return sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
 
 class PlayerStick:
@@ -98,7 +102,7 @@ class PlayerStick:
 
         self.rot_acc = 0.0  # Stick starts without any rotational acceleration
         self.rot_vel = 0.0  # Stick starts without any rotational velocity
-        self.rot_pos = 0.0  # Stick starts at down position (=0 radians)
+        self.rot_pos = pi / 2  # Stick starts at down position (=0 radians)
 
         if opponent_num == 0:
             self.color = (0, 0, 255)  # Player 1 is blue
@@ -129,7 +133,7 @@ class PlayerStick:
             self.rot_vel = - Table.player_max_rot_vel
 
         self.rot_pos += self.rot_vel
-        self.rot_pos = mod2Pi(self.rot_pos)
+        self.rot_pos = mod2pi(self.rot_pos)
 
     def draw(self):
         pygame.draw.rect(screen, Table.stick_color, (self.pos_x - Table.stick_width/2, 0, Table.stick_width, Table.width), Table.stick_border)  # draw the stick
@@ -195,20 +199,76 @@ class Ball:
                     # print("correct height detected")
                     if ((self.pos_x + Table.ball_radius) >= collision_box["center_x"] - Table.player_thickness / 2) and ((self.pos_x - Table.ball_radius) <= (collision_box["center_x"] + Table.player_thickness / 2)):
                         if self.vel_x < opponent.sticks[collision_box["playerRole"]].rot_vel * Table.player_height:  # Ball hit right side of hitbox
-                            self.pos_x = collision_box["center_x"] + Table.player_thickness / 2 + Table.ball_radius
+                            self.pos_x = collision_box["center_x"] + Table.player_thickness / 2 + Table.ball_radius + 1
                         elif self.vel_x > opponent.sticks[collision_box["playerRole"]].rot_vel * Table.player_height:  # Ball hit left side of hitbox
-                            self.pos_x = collision_box["center_x"] - Table.player_thickness / 2 - Table.ball_radius
+                            self.pos_x = collision_box["center_x"] - Table.player_thickness / 2 - Table.ball_radius - 1
                         self.vel_x = (- self.vel_x) * Table.player_hit_cin_energy_efficiency + opponent.sticks[collision_box["playerRole"]].rot_vel * Table.player_height  # Change velocity sign and account for energy loss and add player rot speed
-                        self.vel_y = - self.vel_y * Table.player_hit_cin_energy_efficiency  # Change velocity sign and account for energy loss
+                        self.vel_y = self.vel_y * Table.player_hit_cin_energy_efficiency  # Change velocity sign and account for energy loss
 
                 elif (collision_box["center_x"] - Table.player_thickness / 2) <= self.pos_x <= (collision_box["center_x"] + Table.player_thickness / 2):
                     if ((self.pos_y + Table.ball_radius) >= collision_box["center_y"] - Table.player_width / 2) and ((self.pos_y - Table.ball_radius) <= collision_box["center_y"] + Table.player_width / 2):
                         if self.vel_y < opponent.sticks[collision_box["playerRole"]].lin_vel:  # Ball hit lower side of hitbox
-                            self.pos_y = collision_box["center_y"] + Table.player_width / 2 + Table.ball_radius
+                            self.pos_y = collision_box["center_y"] + Table.player_width / 2 + Table.ball_radius + 1
                         elif self.vel_y > opponent.sticks[collision_box["playerRole"]].lin_vel:  # Ball hit upper side of hitbox
-                            self.pos_y = collision_box["center_y"] - Table.player_width / 2 - Table.ball_radius
-                        self.vel_x = (- self.vel_x) * Table.player_hit_cin_energy_efficiency   # Change velocity sign and account for energy loss
-                        self.vel_y = - self.vel_y * Table.player_hit_cin_energy_efficiency + opponent.sticks[collision_box["playerRole"]].lin_vel  # Change velocity sign and account for energy loss and add player lin speed
+                            self.pos_y = collision_box["center_y"] - Table.player_width / 2 - Table.ball_radius - 1
+                        self.vel_x = self.vel_x * Table.player_hit_cin_energy_efficiency   # Change velocity sign and account for energy loss
+                        self.vel_y = (- self.vel_y) * Table.player_hit_cin_energy_efficiency + opponent.sticks[collision_box["playerRole"]].lin_vel  # Change velocity sign and account for energy loss and add player lin speed
+
+                elif (self.pos_x <= collision_box["center_x"] - Table.player_thickness / 2) and (self.pos_y <= collision_box["center_y"] - Table.player_width / 2):  # Upper left corner
+                    if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] - Table.player_thickness / 2, collision_box["center_y"] - Table.player_width / 2) <= Table.ball_radius:  # Collsions
+                        x = self.pos_x - (collision_box["center_x"] - Table.player_thickness / 2)
+                        y = self.pos_y - (collision_box["center_y"] - Table.player_width / 2)
+                        c = - 2 * (self.vel_x * x + self.vel_y * y) / (x**2 + y**2)
+                        self.vel_x = (self.vel_x + c * x)  # * Table.player_hit_cin_energy_efficiency
+                        self.vel_y = (self.vel_y + c * y)  # * Table.player_hit_cin_energy_efficiency
+
+                elif (self.pos_x <= collision_box["center_x"] - Table.player_thickness / 2) and (self.pos_y >= collision_box["center_y"] + Table.player_width / 2):  # Lower left corner
+                    if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] - Table.player_thickness / 2, collision_box["center_y"] + Table.player_width / 2) <= Table.ball_radius:  # Collsions
+                        x = self.pos_x - (collision_box["center_x"] - Table.player_thickness / 2)
+                        y = self.pos_y - (collision_box["center_y"] + Table.player_width / 2)
+                        c = - 2 * (self.vel_x * x + self.vel_y * y) / (x**2 + y**2)
+                        self.vel_x = (self.vel_x + c * x)  # * Table.player_hit_cin_energy_efficiency
+                        self.vel_y = (self.vel_y + c * y)  # * Table.player_hit_cin_energy_efficiency
+
+                elif (self.pos_x >= collision_box["center_x"] + Table.player_thickness / 2) and (self.pos_y <= collision_box["center_y"] - Table.player_width / 2):  # Upper right corner
+                    if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] + Table.player_thickness / 2, collision_box["center_y"] - Table.player_width / 2) <= Table.ball_radius:  # Collsions
+                        x = self.pos_x - (collision_box["center_x"] + Table.player_thickness / 2)
+                        y = self.pos_y - (collision_box["center_y"] - Table.player_width / 2)
+                        c = - 2 * (self.vel_x * x + self.vel_y * y) / (x**2 + y**2)
+                        self.vel_x = (self.vel_x + c * x)  # * Table.player_hit_cin_energy_efficiency
+                        self.vel_y = (self.vel_y + c * y)  # * Table.player_hit_cin_energy_efficiency
+                        a = tan((self.pos_y - (collision_box["center_y"] - Table.player_width / 2) / ((collision_box["center_x"]) + Table.player_thickness / 2)))
+                        self.pos_x = collision_box["center_x"] + Table.player_thickness / 2 - sqrt((Table.ball_radius + 1)**2 / (1 + (tan(a))**2))
+                        self.pos_y = (collision_box["center_y"] - Table.player_width / 2) + tan(a) * sqrt((Table.ball_radius + 1)**2 / (1 + (tan(a))**2))
+
+                elif (self.pos_x >= collision_box["center_x"] + Table.player_thickness / 2) and (self.pos_y >= collision_box["center_y"] + Table.player_width / 2):  # Lower right corner
+                    if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] + Table.player_thickness / 2, collision_box["center_y"] + Table.player_width / 2) <= Table.ball_radius:  # Collsions
+                        x = self.pos_x - (collision_box["center_x"] + Table.player_thickness / 2)
+                        y = self.pos_y - (collision_box["center_y"] + Table.player_width / 2)
+                        c = - 2 * (self.vel_x * x + self.vel_y * y) / (x**2 + y**2)
+                        self.vel_x = (self.vel_x + c * x)  # * Table.player_hit_cin_energy_efficiency
+                        self.vel_y = (self.vel_y + c * y)  # * Table.player_hit_cin_energy_efficiency
+
+            if self.pos_x - Table.ball_radius <= 0:  # Left edge collision
+                self.pos_x = Table.ball_radius + 1
+                self.vel_x = (- self.vel_x) * Table.edge_hit_cin_energy_efficiency
+                self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
+
+            if self.pos_x + Table.ball_radius >= Table.length:  # Right edge collision
+                self.pos_x = Table.length - Table.ball_radius - 1
+                self.vel_x = (- self.vel_x) * Table.edge_hit_cin_energy_efficiency
+                self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
+
+            if self.pos_y - Table.ball_radius <= 0:  # Upper edge collision
+                self.pos_y = Table.ball_radius + 1
+                self.vel_x = self.vel_x * Table.edge_hit_cin_energy_efficiency
+                self.vel_y = (- self.vel_y) * Table.edge_hit_cin_energy_efficiency
+
+            if self.pos_y + Table.ball_radius >= Table.width:  # Lower edge collision
+                self.pos_y = Table.width - Table.ball_radius - 1
+                self.vel_x = self.vel_x * Table.edge_hit_cin_energy_efficiency
+                self.vel_y = (- self.vel_y) * Table.edge_hit_cin_energy_efficiency
+
 
     def update(self):
         self.vel_x += self.acc_x

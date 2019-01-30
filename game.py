@@ -519,7 +519,7 @@ def run_all_games_single_window(games):
     all_games_done = False
     active_game = -1
     show_all_games = True
-    while True:
+    while True and not all_games_done:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -679,12 +679,15 @@ def run_all_games_single_window(games):
                 if event.key == pygame.K_p or event.key == pygame.K_RIGHTBRACKET:
                     games[active_game].opponents[1].sticks[0].rot_acc = 0
                     games[active_game].opponents[1].sticks[0].rot_vel = 0
-                    
+
+        all_games_done = True
+
         for game in games:  # Run all games except last one
             game.update_all()
             if show_all_games:
                 game.draw_all()
             all_games_done = all_games_done and game.game_over
+
 
         if not show_all_games:
             games[active_game].draw_all()
@@ -706,6 +709,7 @@ screen.fill(0)
 
 currentPop = Population()  # New population
 print(currentPop.all_nets)
+currentPop.save_net_to_file()
 
 while True:
 
@@ -719,6 +723,7 @@ while True:
 
     run_all_games_single_window(games)
 
-    Population.generation += 1
-    print(Population.generation)
+    currentPop.gen += 1
+    currentPop.save_net_to_file()
+    print(currentPop.gen)
 

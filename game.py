@@ -11,7 +11,7 @@ class Table:
     # Various properties of the table and its representation
     width = 600
     length = 1200
-    edge_hit_cin_energy_efficiency = 1.0  # 0.95
+    edge_hit_cin_energy_efficiency = 0.95
 
     player_width = 40
     player_thickness = 20
@@ -20,12 +20,12 @@ class Table:
     player_angle_hit_limit = pi / 6
     player_max_lin_vel = 20
     player_max_rot_vel = 0.2 * pi
-    player_hit_cin_energy_efficiency = 1.0  # 0.1
+    player_hit_cin_energy_efficiency = 0.1
 
     ball_radius = 20
     ball_color = (255, 255, 255)
-    ball_max_vel = 1
-    ball_table_friction_coefficient = 0.0  # 0.001
+    ball_max_vel = 30
+    ball_table_friction_coefficient = 0.001
 
     stick_width = 10
     stick_color = (127, 127, 127)
@@ -298,6 +298,16 @@ class Ball:
         self.vel_x += self.acc_x
         self.vel_y += self.acc_y
 
+        if self.vel_x > Table.ball_max_vel:
+            self.vel_x = Table.ball_max_vel
+        elif self.vel_x < - Table.ball_max_vel:
+            self.vel_x = -  Table.ball_max_vel
+
+        if self.vel_y > Table.ball_max_vel:
+            self.vel_y = Table.ball_max_vel
+        elif self.vel_y < - Table.ball_max_vel:
+            self.vel_y = -  Table.ball_max_vel
+
         # Account for friction
         self.vel_x -= Table.ball_table_friction_coefficient * (self.vel_x**2)
         self.vel_y -= Table.ball_table_friction_coefficient * (self.vel_y**2)
@@ -521,6 +531,81 @@ def run_all_games_single_window(games):
     show_all_games = True
     while True and not all_games_done:
 
+        for game in games:
+            opponent = game.opponents[0]
+            inputs0 = []
+            for stick in opponent.sticks:
+                inputs0.append(stick.lin_pos / stick.lin_range)
+                inputs0.append(stick.lin_vel / Table.player_max_lin_vel)
+                inputs0.append(stick.rot_pos / pi)
+                inputs0.append(stick.rot_vel / Table.player_max_rot_vel)
+            for stick in game.opponents[1].sticks:
+                inputs0.append(stick.lin_pos / stick.lin_range)
+                inputs0.append(stick.lin_vel / Table.player_max_lin_vel)
+                inputs0.append(stick.rot_pos / pi)
+                inputs0.append(stick.rot_vel / Table.player_max_rot_vel)
+            inputs0.append(game.ball.pos_x / Table.length)
+            inputs0.append(game.ball.vel_x / Table.ball_max_vel)
+            inputs0.append(game.ball.pos_y / Table.width)
+            inputs0.append(game.ball.vel_y / Table.ball_max_vel)
+            # inputs0.append(Table.player_height / Table.length)
+            # inputs0.append(Table.player_width / Table.width)
+            # inputs0.append(Table.player_thickness / Table.length)
+            # inputs0.append(Table.player_angle_hit_limit / pi)
+            # inputs0.append(Table.ball_radius / Table.length)
+
+            game.opponents[0].brain.put_input(inputs0)
+            game.opponents[0].brain.feed_forward()
+            outputs0 = game.opponents[0].brain.get_outputs()
+
+            opponent = game.opponents[1]
+            inputs1 = []
+            for stick in opponent.sticks:
+                inputs1.append(- stick.lin_pos / stick.lin_range)
+                inputs1.append(- stick.lin_vel / Table.player_max_lin_vel)
+                inputs1.append(- stick.rot_pos / pi)
+                inputs1.append(- stick.rot_vel / Table.player_max_rot_vel)
+            for stick in game.opponents[0].sticks:
+                inputs1.append(- stick.lin_pos / stick.lin_range)
+                inputs1.append(- stick.lin_vel / Table.player_max_lin_vel)
+                inputs1.append(- stick.rot_pos / pi)
+                inputs1.append(- stick.rot_vel / Table.player_max_rot_vel)
+            inputs1.append((Table.length - game.ball.pos_x) / Table.length)
+            inputs1.append(- game.ball.vel_x / Table.ball_max_vel)
+            inputs1.append((Table.width - game.ball.pos_y) / Table.width)
+            inputs1.append(- game.ball.vel_y / Table.ball_max_vel)
+            # inputs1.append(Table.player_height / Table.length)
+            # inputs1.append(Table.player_width / Table.width)
+            # inputs1.append(Table.player_thickness / Table.length)
+            # inputs1.append(Table.player_angle_hit_limit / pi)
+            # inputs1.append(Table.ball_radius / Table.length)
+
+            game.opponents[1].brain.put_input(inputs1)
+            game.opponents[1].brain.feed_forward()
+            outputs1 = game.opponents[1].brain.get_outputs()
+
+            # print(outputs0)
+
+            game.opponents[0].sticks[0].lin_acc = outputs0[0] * Table.key_lin_acc
+            game.opponents[0].sticks[0].rot_acc = outputs0[1] * Table.key_rot_acc
+            game.opponents[0].sticks[1].lin_acc = outputs0[2] * Table.key_lin_acc
+            game.opponents[0].sticks[1].rot_acc = outputs0[3] * Table.key_rot_acc
+            game.opponents[0].sticks[2].lin_acc = outputs0[4] * Table.key_lin_acc
+            game.opponents[0].sticks[2].rot_acc = outputs0[5] * Table.key_rot_acc
+            game.opponents[0].sticks[3].lin_acc = outputs0[6] * Table.key_lin_acc
+            game.opponents[0].sticks[3].rot_acc = outputs0[7] * Table.key_rot_acc
+
+            # print(outputs1)
+
+            game.opponents[1].sticks[0].lin_acc = - outputs1[0] * Table.key_lin_acc
+            game.opponents[1].sticks[0].rot_acc = - outputs1[1] * Table.key_rot_acc
+            game.opponents[1].sticks[1].lin_acc = - outputs1[2] * Table.key_lin_acc
+            game.opponents[1].sticks[1].rot_acc = - outputs1[3] * Table.key_rot_acc
+            game.opponents[1].sticks[2].lin_acc = - outputs1[4] * Table.key_lin_acc
+            game.opponents[1].sticks[2].rot_acc = - outputs1[5] * Table.key_rot_acc
+            game.opponents[1].sticks[3].lin_acc = - outputs1[6] * Table.key_lin_acc
+            game.opponents[1].sticks[3].rot_acc = - outputs1[7] * Table.key_rot_acc
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -536,6 +621,7 @@ def run_all_games_single_window(games):
 
                 if event.key == pygame.K_s:
                     games[active_game].opponents[0].sticks[0].lin_acc = -Table.key_lin_acc
+                    print("s")
                 elif event.key == pygame.K_x:
                     games[active_game].opponents[0].sticks[0].lin_acc = Table.key_lin_acc
                 if event.key == pygame.K_z:
@@ -682,7 +768,7 @@ def run_all_games_single_window(games):
 
         all_games_done = True
 
-        for game in games:  # Run all games except last one
+        for game in games:  # Run all games
             game.update_all()
             if show_all_games:
                 game.draw_all()

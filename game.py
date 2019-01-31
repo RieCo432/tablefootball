@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import pygame
 from time import sleep
 from os import environ
@@ -42,6 +44,9 @@ class Table:
     debug = True  # Enables displaying of the collision boxes
     collision_box_color = (200, 255, 0)
     collision_box_border = 3
+
+    max_frames_no_goals = 7200  # Game is over after 2 minutes without goals
+    max_game_frames = 36000  # Game is over after 10 minutes max
 
 
 class PlayerRole:  # Bind player role to an integer
@@ -267,10 +272,11 @@ class Ball:
                 self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
                 if ((self.pos_y - Table.ball_radius) >= (Table.width / 2 - Table.goal_width / 2)) and ((self.pos_y + Table.ball_radius) <= (Table.width / 2 + Table.goal_width / 2)):
                     self.game.opponents[1].score += 1
+                    self.game.last_goal_frame = self.game.current_frame
                     self.pos_x = Table.length / 2
                     self.pos_y = Table.width / 2
-                    # self.vel_x = 0
-                    # self.vel_y = 0
+                    self.vel_x = 0
+                    self.vel_y = 0
 
             if self.pos_x + Table.ball_radius >= Table.length:  # Right edge collision
                 self.pos_x = Table.length - Table.ball_radius - 1
@@ -278,10 +284,11 @@ class Ball:
                 self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
                 if ((self.pos_y - Table.ball_radius) >= (Table.width / 2 - Table.goal_width / 2)) and ((self.pos_y + Table.ball_radius) <= (Table.width / 2 + Table.goal_width / 2)):
                     self.game.opponents[0].score += 1
+                    self.game.last_goal_frame = self.game.current_frame
                     self.pos_x = Table.length / 2
                     self.pos_y = Table.width / 2
-                    # self.vel_x = 0
-                    # self.vel_y = 0
+                    self.vel_x = 0
+                    self.vel_y = 0
 
             if self.pos_y - Table.ball_radius <= 0:  # Upper edge collision
                 self.pos_y = Table.ball_radius + 1
@@ -329,6 +336,9 @@ class Game:
         self.best_player = 0
         self.ball = Ball(self)
         self.opponents = []  # Generate 2 opponent objects and put them in a list
+        self.last_goal_frame = 0
+        self.game_start_frame = 0
+        self.current_frame = 0
         for i in range(2):
             self.opponents.append(Opponent(i, self))
 
@@ -340,6 +350,7 @@ class Game:
         self.ball.draw()
 
     def update_all(self):
+        self.current_frame += 1
         if not self.game_over:
             # Update velocities, positions and rotation angles
             for op in self.opponents:
@@ -363,6 +374,11 @@ class Game:
             pygame.draw.rect(screen, Table.goal_color, (
             Table.length - Table.goal_thickness, Table.width / 2 - Table.goal_width / 2, Table.goal_thickness,
             Table.goal_width), Table.goal_border)  # Draw goal 2
+
+        if self.current_frame - self.last_goal_frame >= Table.max_frames_no_goals:  # End game after certain number of frames without goals
+            self.game_over = True
+        if self.current_frame >= Table.max_game_frames:  # End game after certain number of frames
+            self.game_over = True
 
     def run(self):
         while True and self.max_score < 11:
@@ -529,7 +545,13 @@ def run_all_games_single_window(games):
     all_games_done = False
     active_game = -1
     show_all_games = True
+
+    last_framerate_update = datetime.now()
+    recent_frametimes = []
+
     while True and not all_games_done:
+
+        frame_start_timestamp = datetime.now()
 
         for game in games:
             opponent = game.opponents[0]
@@ -778,12 +800,15 @@ def run_all_games_single_window(games):
         if not show_all_games:
             games[active_game].draw_all()
 
-        pygame.display.set_caption("Player 1: %d                Player 2: %d              Active Game: %d" % (games[active_game].opponents[0].score, games[active_game].opponents[1].score, active_game))
-
         pygame.display.flip()
         screen.fill(0)
 
-        sleep(0.01)
+        frame_end_timestamp = datetime.now()
+        frametime = (frame_end_timestamp - frame_start_timestamp).total_seconds()
+        recent_frametimes.append(frametime)
+        if (frame_end_timestamp - last_framerate_update).total_seconds() >= 0.5:
+            average_frametime = sum(recent_frametimes) / len(recent_frametimes)
+            pygame.display.set_caption("Player 1: %d                Player 2: %d              Active Game: %d                    Framerate: %f" % (games[active_game].opponents[0].score, games[active_game].opponents[1].score, active_game, 1 / average_frametime))
         
         
 

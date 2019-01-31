@@ -55,7 +55,7 @@ class Brain:
             self.add_node(autolayer=False)
             self.all_nodes[self.node_num].layer = 1
 
-        for i in range(6):
+        for i in range(18):
             self.new_rand_connection()
 
     def put_input(self, input_data):

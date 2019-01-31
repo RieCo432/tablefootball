@@ -380,166 +380,169 @@ class Game:
         if self.current_frame >= Table.max_game_frames:  # End game after certain number of frames
             self.game_over = True
 
-    def run(self):
-        while True and self.max_score < 11:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    exit(0)
+    # def run(self):
+    #     while True and self.max_score < 11:
+    #         for event in pygame.event.get():
+    #             if event.type == pygame.QUIT:
+    #                 pygame.quit()
+    #                 exit(0)
+    #
+    #                 # Controls: pressing and holding various keys subjects the sticks to acceleration, both for shifting
+    #                 # and for rotating
+    #                 # Releasing the key will instantly stop the current translation or rotation
+    #
+    #             if event.type == pygame.KEYDOWN:
+    #
+    #                 # Player 1 controls
+    #
+    #                 if event.key == pygame.K_s:
+    #                     self.opponents[0].sticks[0].lin_acc = -Table.key_lin_acc
+    #                 elif event.key == pygame.K_x:
+    #                     self.opponents[0].sticks[0].lin_acc = Table.key_lin_acc
+    #                 if event.key == pygame.K_z:
+    #                     self.opponents[0].sticks[0].rot_acc = -Table.key_rot_acc
+    #                 elif event.key == pygame.K_c:
+    #                     self.opponents[0].sticks[0].rot_acc = Table.key_rot_acc
+    #
+    #                 if event.key == pygame.K_g:
+    #                     self.opponents[0].sticks[1].lin_acc = -Table.key_lin_acc
+    #                 elif event.key == pygame.K_b:
+    #                     self.opponents[0].sticks[1].lin_acc = Table.key_lin_acc
+    #                 if event.key == pygame.K_v:
+    #                     self.opponents[0].sticks[1].rot_acc = -Table.key_rot_acc
+    #                 elif event.key == pygame.K_n:
+    #                     self.opponents[0].sticks[1].rot_acc = Table.key_rot_acc
+    #
+    #                 if event.key == pygame.K_k:
+    #                     self.opponents[0].sticks[2].lin_acc = -Table.key_lin_acc
+    #                 elif event.key == pygame.K_COMMA:
+    #                     self.opponents[0].sticks[2].lin_acc = Table.key_lin_acc
+    #                 if event.key == pygame.K_m:
+    #                     self.opponents[0].sticks[2].rot_acc = -Table.key_rot_acc
+    #                 elif event.key == pygame.K_PERIOD:
+    #                     self.opponents[0].sticks[2].rot_acc = Table.key_rot_acc
+    #
+    #                 if event.key == pygame.K_UP:
+    #                     self.opponents[0].sticks[3].lin_acc = -Table.key_lin_acc
+    #                 elif event.key == pygame.K_DOWN:
+    #                     self.opponents[0].sticks[3].lin_acc = Table.key_lin_acc
+    #                 if event.key == pygame.K_LEFT:
+    #                     self.opponents[0].sticks[3].rot_acc = -Table.key_rot_acc
+    #                 elif event.key == pygame.K_RIGHT:
+    #                     self.opponents[0].sticks[3].rot_acc = Table.key_rot_acc
+    #
+    #                     # Player 2 controls
+    #
+    #                 if event.key == pygame.K_2:
+    #                     self.opponents[1].sticks[3].lin_acc = -Table.key_lin_acc
+    #                 elif event.key == pygame.K_w:
+    #                     self.opponents[1].sticks[3].lin_acc = Table.key_lin_acc
+    #                 if event.key == pygame.K_q:
+    #                     self.opponents[1].sticks[3].rot_acc = -Table.key_rot_acc
+    #                 elif event.key == pygame.K_e:
+    #                     self.opponents[1].sticks[3].rot_acc = Table.key_rot_acc
+    #
+    #                 if event.key == pygame.K_5:
+    #                     self.opponents[1].sticks[2].lin_acc = -Table.key_lin_acc
+    #                 elif event.key == pygame.K_t:
+    #                     self.opponents[1].sticks[2].lin_acc = Table.key_lin_acc
+    #                 if event.key == pygame.K_r:
+    #                     self.opponents[1].sticks[2].rot_acc = -Table.key_rot_acc
+    #                 elif event.key == pygame.K_y:
+    #                     self.opponents[1].sticks[2].rot_acc = Table.key_rot_acc
+    #
+    #                 if event.key == pygame.K_8:
+    #                     self.opponents[1].sticks[1].lin_acc = -Table.key_lin_acc
+    #                 elif event.key == pygame.K_i:
+    #                     self.opponents[1].sticks[1].lin_acc = Table.key_lin_acc
+    #                 if event.key == pygame.K_u:
+    #                     self.opponents[1].sticks[1].rot_acc = -Table.key_rot_acc
+    #                 elif event.key == pygame.K_o:
+    #                     self.opponents[1].sticks[1].rot_acc = Table.key_rot_acc
+    #
+    #                 if event.key == pygame.K_MINUS:
+    #                     self.opponents[1].sticks[0].lin_acc = -Table.key_lin_acc
+    #                 elif event.key == pygame.K_LEFTBRACKET:
+    #                     self.opponents[1].sticks[0].lin_acc = Table.key_lin_acc
+    #                 if event.key == pygame.K_p:
+    #                     self.opponents[1].sticks[0].rot_acc = -Table.key_rot_acc
+    #                 elif event.key == pygame.K_RIGHTBRACKET:
+    #                     self.opponents[1].sticks[0].rot_acc = Table.key_rot_acc
+    #
+    #             if event.type == pygame.KEYUP:
+    #
+    #                 # Player 1 controls
+    #
+    #                 if event.key == pygame.K_s or event.key == pygame.K_x:
+    #                     self.opponents[0].sticks[0].lin_acc = 0
+    #                     self.opponents[0].sticks[0].lin_vel = 0
+    #                 if event.key == pygame.K_z or event.key == pygame.K_c:
+    #                     self.opponents[0].sticks[0].rot_acc = 0
+    #                     self.opponents[0].sticks[0].rot_vel = 0
+    #
+    #                 if event.key == pygame.K_g or event.key == pygame.K_b:
+    #                     self.opponents[0].sticks[1].lin_acc = 0
+    #                     self.opponents[0].sticks[1].lin_vel = 0
+    #                 if event.key == pygame.K_v or event.key == pygame.K_n:
+    #                     self.opponents[0].sticks[1].rot_acc = 0
+    #                     self.opponents[0].sticks[1].rot_vel = 0
+    #
+    #                 if event.key == pygame.K_k or event.key == pygame.K_COMMA:
+    #                     self.opponents[0].sticks[2].lin_acc = 0
+    #                     self.opponents[0].sticks[2].lin_vel = 0
+    #                 if event.key == pygame.K_m or event.key == pygame.K_PERIOD:
+    #                     self.opponents[0].sticks[2].rot_acc = 0
+    #                     self.opponents[0].sticks[2].rot_vel = 0
+    #
+    #                 if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
+    #                     self.opponents[0].sticks[3].lin_acc = 0
+    #                     self.opponents[0].sticks[3].lin_vel = 0
+    #                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+    #                     self.opponents[0].sticks[3].rot_acc = 0
+    #                     self.opponents[0].sticks[3].rot_vel = 0
+    #
+    #                     # Player 2 controls
+    #
+    #                 if event.key == pygame.K_2 or event.key == pygame.K_w:
+    #                     self.opponents[1].sticks[3].lin_acc = 0
+    #                     self.opponents[1].sticks[3].lin_vel = 0
+    #                 if event.key == pygame.K_q or event.key == pygame.K_e:
+    #                     self.opponents[1].sticks[3].rot_acc = 0
+    #                     self.opponents[1].sticks[3].rot_vel = 0
+    #
+    #                 if event.key == pygame.K_5 or event.key == pygame.K_t:
+    #                     self.opponents[1].sticks[2].lin_acc = 0
+    #                     self.opponents[1].sticks[2].lin_vel = 0
+    #                 if event.key == pygame.K_r or event.key == pygame.K_y:
+    #                     self.opponents[1].sticks[2].rot_acc = 0
+    #                     self.opponents[1].sticks[2].rot_vel = 0
+    #
+    #                 if event.key == pygame.K_8 or event.key == pygame.K_i:
+    #                     self.opponents[1].sticks[1].lin_acc = 0
+    #                     self.opponents[1].sticks[1].lin_vel = 0
+    #                 if event.key == pygame.K_u or event.key == pygame.K_o:
+    #                     self.opponents[1].sticks[1].rot_acc = 0
+    #                     self.opponents[1].sticks[1].rot_vel = 0
+    #
+    #                 if event.key == pygame.K_MINUS or event.key == pygame.K_LEFTBRACKET:
+    #                     self.opponents[1].sticks[0].lin_acc = 0
+    #                     self.opponents[1].sticks[0].lin_vel = 0
+    #                 if event.key == pygame.K_p or event.key == pygame.K_RIGHTBRACKET:
+    #                     self.opponents[1].sticks[0].rot_acc = 0
+    #                     self.opponents[1].sticks[0].rot_vel = 0
+    #
+    #         screen.fill(0)
+    #         self.update_all()
+    #         self.draw_all()
+    #         pygame.display.set_caption(
+    #             "Player 1: %d                Player 2: %d" % (self.opponents[0].score, self.opponents[1].score))
+    #         pygame.display.flip()
+    #
+    #         sleep(0.01)
 
-                    # Controls: pressing and holding various keys subjects the sticks to acceleration, both for shifting
-                    # and for rotating
-                    # Releasing the key will instantly stop the current translation or rotation
 
-                if event.type == pygame.KEYDOWN:
+# def run_networks_worker(partial_game_list):
 
-                    # Player 1 controls
-
-                    if event.key == pygame.K_s:
-                        self.opponents[0].sticks[0].lin_acc = -Table.key_lin_acc
-                    elif event.key == pygame.K_x:
-                        self.opponents[0].sticks[0].lin_acc = Table.key_lin_acc
-                    if event.key == pygame.K_z:
-                        self.opponents[0].sticks[0].rot_acc = -Table.key_rot_acc
-                    elif event.key == pygame.K_c:
-                        self.opponents[0].sticks[0].rot_acc = Table.key_rot_acc
-
-                    if event.key == pygame.K_g:
-                        self.opponents[0].sticks[1].lin_acc = -Table.key_lin_acc
-                    elif event.key == pygame.K_b:
-                        self.opponents[0].sticks[1].lin_acc = Table.key_lin_acc
-                    if event.key == pygame.K_v:
-                        self.opponents[0].sticks[1].rot_acc = -Table.key_rot_acc
-                    elif event.key == pygame.K_n:
-                        self.opponents[0].sticks[1].rot_acc = Table.key_rot_acc
-
-                    if event.key == pygame.K_k:
-                        self.opponents[0].sticks[2].lin_acc = -Table.key_lin_acc
-                    elif event.key == pygame.K_COMMA:
-                        self.opponents[0].sticks[2].lin_acc = Table.key_lin_acc
-                    if event.key == pygame.K_m:
-                        self.opponents[0].sticks[2].rot_acc = -Table.key_rot_acc
-                    elif event.key == pygame.K_PERIOD:
-                        self.opponents[0].sticks[2].rot_acc = Table.key_rot_acc
-
-                    if event.key == pygame.K_UP:
-                        self.opponents[0].sticks[3].lin_acc = -Table.key_lin_acc
-                    elif event.key == pygame.K_DOWN:
-                        self.opponents[0].sticks[3].lin_acc = Table.key_lin_acc
-                    if event.key == pygame.K_LEFT:
-                        self.opponents[0].sticks[3].rot_acc = -Table.key_rot_acc
-                    elif event.key == pygame.K_RIGHT:
-                        self.opponents[0].sticks[3].rot_acc = Table.key_rot_acc
-
-                        # Player 2 controls
-
-                    if event.key == pygame.K_2:
-                        self.opponents[1].sticks[3].lin_acc = -Table.key_lin_acc
-                    elif event.key == pygame.K_w:
-                        self.opponents[1].sticks[3].lin_acc = Table.key_lin_acc
-                    if event.key == pygame.K_q:
-                        self.opponents[1].sticks[3].rot_acc = -Table.key_rot_acc
-                    elif event.key == pygame.K_e:
-                        self.opponents[1].sticks[3].rot_acc = Table.key_rot_acc
-
-                    if event.key == pygame.K_5:
-                        self.opponents[1].sticks[2].lin_acc = -Table.key_lin_acc
-                    elif event.key == pygame.K_t:
-                        self.opponents[1].sticks[2].lin_acc = Table.key_lin_acc
-                    if event.key == pygame.K_r:
-                        self.opponents[1].sticks[2].rot_acc = -Table.key_rot_acc
-                    elif event.key == pygame.K_y:
-                        self.opponents[1].sticks[2].rot_acc = Table.key_rot_acc
-
-                    if event.key == pygame.K_8:
-                        self.opponents[1].sticks[1].lin_acc = -Table.key_lin_acc
-                    elif event.key == pygame.K_i:
-                        self.opponents[1].sticks[1].lin_acc = Table.key_lin_acc
-                    if event.key == pygame.K_u:
-                        self.opponents[1].sticks[1].rot_acc = -Table.key_rot_acc
-                    elif event.key == pygame.K_o:
-                        self.opponents[1].sticks[1].rot_acc = Table.key_rot_acc
-
-                    if event.key == pygame.K_MINUS:
-                        self.opponents[1].sticks[0].lin_acc = -Table.key_lin_acc
-                    elif event.key == pygame.K_LEFTBRACKET:
-                        self.opponents[1].sticks[0].lin_acc = Table.key_lin_acc
-                    if event.key == pygame.K_p:
-                        self.opponents[1].sticks[0].rot_acc = -Table.key_rot_acc
-                    elif event.key == pygame.K_RIGHTBRACKET:
-                        self.opponents[1].sticks[0].rot_acc = Table.key_rot_acc
-
-                if event.type == pygame.KEYUP:
-
-                    # Player 1 controls
-
-                    if event.key == pygame.K_s or event.key == pygame.K_x:
-                        self.opponents[0].sticks[0].lin_acc = 0
-                        self.opponents[0].sticks[0].lin_vel = 0
-                    if event.key == pygame.K_z or event.key == pygame.K_c:
-                        self.opponents[0].sticks[0].rot_acc = 0
-                        self.opponents[0].sticks[0].rot_vel = 0
-
-                    if event.key == pygame.K_g or event.key == pygame.K_b:
-                        self.opponents[0].sticks[1].lin_acc = 0
-                        self.opponents[0].sticks[1].lin_vel = 0
-                    if event.key == pygame.K_v or event.key == pygame.K_n:
-                        self.opponents[0].sticks[1].rot_acc = 0
-                        self.opponents[0].sticks[1].rot_vel = 0
-
-                    if event.key == pygame.K_k or event.key == pygame.K_COMMA:
-                        self.opponents[0].sticks[2].lin_acc = 0
-                        self.opponents[0].sticks[2].lin_vel = 0
-                    if event.key == pygame.K_m or event.key == pygame.K_PERIOD:
-                        self.opponents[0].sticks[2].rot_acc = 0
-                        self.opponents[0].sticks[2].rot_vel = 0
-
-                    if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-                        self.opponents[0].sticks[3].lin_acc = 0
-                        self.opponents[0].sticks[3].lin_vel = 0
-                    if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                        self.opponents[0].sticks[3].rot_acc = 0
-                        self.opponents[0].sticks[3].rot_vel = 0
-
-                        # Player 2 controls
-
-                    if event.key == pygame.K_2 or event.key == pygame.K_w:
-                        self.opponents[1].sticks[3].lin_acc = 0
-                        self.opponents[1].sticks[3].lin_vel = 0
-                    if event.key == pygame.K_q or event.key == pygame.K_e:
-                        self.opponents[1].sticks[3].rot_acc = 0
-                        self.opponents[1].sticks[3].rot_vel = 0
-
-                    if event.key == pygame.K_5 or event.key == pygame.K_t:
-                        self.opponents[1].sticks[2].lin_acc = 0
-                        self.opponents[1].sticks[2].lin_vel = 0
-                    if event.key == pygame.K_r or event.key == pygame.K_y:
-                        self.opponents[1].sticks[2].rot_acc = 0
-                        self.opponents[1].sticks[2].rot_vel = 0
-
-                    if event.key == pygame.K_8 or event.key == pygame.K_i:
-                        self.opponents[1].sticks[1].lin_acc = 0
-                        self.opponents[1].sticks[1].lin_vel = 0
-                    if event.key == pygame.K_u or event.key == pygame.K_o:
-                        self.opponents[1].sticks[1].rot_acc = 0
-                        self.opponents[1].sticks[1].rot_vel = 0
-
-                    if event.key == pygame.K_MINUS or event.key == pygame.K_LEFTBRACKET:
-                        self.opponents[1].sticks[0].lin_acc = 0
-                        self.opponents[1].sticks[0].lin_vel = 0
-                    if event.key == pygame.K_p or event.key == pygame.K_RIGHTBRACKET:
-                        self.opponents[1].sticks[0].rot_acc = 0
-                        self.opponents[1].sticks[0].rot_vel = 0
-
-            screen.fill(0)
-            self.update_all()
-            self.draw_all()
-            pygame.display.set_caption(
-                "Player 1: %d                Player 2: %d" % (self.opponents[0].score, self.opponents[1].score))
-            pygame.display.flip()
-
-            sleep(0.01)
-            
             
 def run_all_games_single_window(games):
     all_games_done = False
@@ -803,6 +806,8 @@ def run_all_games_single_window(games):
         pygame.display.flip()
         screen.fill(0)
 
+        sleep(0.01)
+
         frame_end_timestamp = datetime.now()
         frametime = (frame_end_timestamp - frame_start_timestamp).total_seconds()
         recent_frametimes.append(frametime)
@@ -819,18 +824,19 @@ screen = pygame.display.set_mode((Table.length, Table.width))
 screen.fill(0)
 
 currentPop = Population()  # New population
-print(currentPop.all_nets)
+# print(currentPop.all_nets)
 currentPop.save_net_to_file()
 
 while True:
 
     games = []  # New array of games to be played
     
-    for i in range(0, Population.size, 2):
-        new_game = Game()
-        new_game.opponents[0].brain = currentPop.all_nets[i]
-        new_game.opponents[1].brain = currentPop.all_nets[i+1]
-        games.append(new_game)
+    for network1_num in range(0, Population.size - 1):
+        for network2_num in range(network1_num + 1, Population.size):
+            new_game = Game()
+            new_game.opponents[0].brain = currentPop.all_nets[network1_num]
+            new_game.opponents[1].brain = currentPop.all_nets[network2_num]
+            games.append(new_game)
 
     run_all_games_single_window(games)
 

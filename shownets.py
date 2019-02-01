@@ -14,11 +14,14 @@ screen = pygame.display.set_mode((width, height))
 screen.fill(0)
 
 
-def load():
-    with open("neuralnet.json", "r") as fin:
-        nets_dict = json.load(fin)
+def load(old_nets):
+    try:
+        with open("neuralnet.json", "r") as fin:
+            nets_dict = json.load(fin)
 
-    nets = nets_dict["nets"]
+            nets = nets_dict["nets"]
+    except json.decoder.JSONDecodeError:
+        nets = old_nets
 
     return nets
 
@@ -79,7 +82,7 @@ def draw_net(num, nets):
     screen.fill(0)
 
 
-nets = load()
+nets = load([])
 draw_net(0, nets)
 
 curr_net = 0
@@ -88,7 +91,7 @@ last_refresh = datetime.now()
 while True:
 
     if (datetime.now() - last_refresh).total_seconds() >= 2:
-        nets = load()
+        nets = load(nets)
         last_refresh = datetime.now()
 
     draw_net(curr_net, nets)
@@ -100,14 +103,14 @@ while True:
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_1:
-                nets = load()
+                nets = load(nets)
                 curr_net -= 1
                 curr_net %= len(nets)
             elif event.key == pygame.K_3:
-                nets = load()
+                nets = load(nets)
                 curr_net += 1
                 curr_net %= len(nets)
             elif event.key == pygame.K_RETURN:
-                nets = load()
+                nets = load(nets)
 
     sleep(0.033)

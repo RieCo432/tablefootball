@@ -246,8 +246,8 @@ class Population:
 
         self.all_nets = deepcopy(new_nets)
 
-        for net in self.all_nets:
-            net.mutate()
+        for i in range(2 % len(self.all_nets), len(self.all_nets)):
+            self.all_nets[i].mutate()
 
     def select_parent(self):
         rand = uniform(0, self.fitness_sum)

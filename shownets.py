@@ -1,14 +1,15 @@
 import json
 from time import sleep
+from datetime import datetime
 
 import pygame
 from os import environ
 from math import ceil
 
-environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (50, 50)
+environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (1210, 50)
 pygame.init()
-width = 1000
-height = 800
+width = 700
+height = 1000
 screen = pygame.display.set_mode((width, height))
 screen.fill(0)
 
@@ -82,7 +83,16 @@ nets = load()
 draw_net(0, nets)
 
 curr_net = 0
+last_refresh = datetime.now()
+
 while True:
+
+    if (datetime.now() - last_refresh).total_seconds() >= 2:
+        nets = load()
+        last_refresh = datetime.now()
+
+    draw_net(curr_net, nets)
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -90,15 +100,14 @@ while True:
 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_1:
+                nets = load()
                 curr_net -= 1
                 curr_net %= len(nets)
-                draw_net(curr_net, nets)
             elif event.key == pygame.K_3:
+                nets = load()
                 curr_net += 1
                 curr_net %= len(nets)
-                draw_net(curr_net, nets)
             elif event.key == pygame.K_RETURN:
                 nets = load()
-                draw_net(curr_net, nets)
 
     sleep(0.033)

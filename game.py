@@ -1,12 +1,14 @@
 from datetime import datetime
-
 import pygame
 from time import sleep
 from os import environ
 from math import sin, floor, pi, sqrt, tan, atan
 from NeuralNet import Population
 
-parallel_games = 1
+
+max_frame_rate = 480
+active_game = 0
+show_all_games = True
 
 
 class Table:
@@ -20,13 +22,13 @@ class Table:
     player_height = 160
     player_border = 2
     player_angle_hit_limit = pi / 6
-    player_max_lin_vel = 20
-    player_max_rot_vel = 0.2 * pi
+    player_max_lin_vel = 15
+    player_max_rot_vel = pi / 8
     player_hit_cin_energy_efficiency = 0.1
 
     ball_radius = 20
     ball_color = (255, 255, 255)
-    ball_max_vel = 30
+    ball_max_vel = 20
     ball_table_friction_coefficient = 0.001
 
     stick_width = 10
@@ -38,7 +40,7 @@ class Table:
     goal_thickness = 5
     goal_border = 2
     
-    key_lin_acc = 0.4
+    key_lin_acc = 6
     key_rot_acc = pi / 256
 
     debug = True  # Enables displaying of the collision boxes
@@ -47,6 +49,7 @@ class Table:
 
     max_frames_no_goals = 7200  # Game is over after 2 minutes without goals
     max_game_frames = 36000  # Game is over after 10 minutes max
+    max_score = 11
 
 
 class PlayerRole:  # Bind player role to an integer
@@ -155,7 +158,7 @@ class Opponent:
         self.game = game
         self.score = 0
         self.sticks = []
-        self.collision_rects = []  # Store collsion rectangles
+        self.collision_rects = []  # Store collision rectangles
         for role in range(4):  # Generate 4 sticks with roles 0 to 3 (roles defined as integers in the PlayerRole class)
             self.sticks.append(PlayerStick(opponent_num, role, game))
 
@@ -223,7 +226,7 @@ class Ball:
                         self.vel_y = (- self.vel_y) * Table.player_hit_cin_energy_efficiency + opponent.sticks[collision_box["playerRole"]].lin_vel  # Change velocity sign and account for energy loss and add player lin speed
 
                 elif (self.pos_x <= collision_box["center_x"] - Table.player_thickness / 2) and (self.pos_y <= collision_box["center_y"] - Table.player_width / 2):  # Upper left corner
-                    if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] - Table.player_thickness / 2, collision_box["center_y"] - Table.player_width / 2) <= Table.ball_radius:  # Collsions
+                    if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] - Table.player_thickness / 2, collision_box["center_y"] - Table.player_width / 2) <= Table.ball_radius:  # Collisions
                         x = self.pos_x - (collision_box["center_x"] - Table.player_thickness / 2)
                         y = self.pos_y - (collision_box["center_y"] - Table.player_width / 2)
                         c = - 2 * (self.vel_x * x + self.vel_y * y) / (x**2 + y**2)
@@ -234,7 +237,7 @@ class Ball:
                         self.pos_y = (self.pos_x - (collision_box["center_x"] - Table.player_thickness / 2)) * tan_a + (collision_box["center_y"] - Table.player_width / 2)
 
                 elif (self.pos_x <= collision_box["center_x"] - Table.player_thickness / 2) and (self.pos_y >= collision_box["center_y"] + Table.player_width / 2):  # Lower left corner
-                    if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] - Table.player_thickness / 2, collision_box["center_y"] + Table.player_width / 2) <= Table.ball_radius:  # Collsions
+                    if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] - Table.player_thickness / 2, collision_box["center_y"] + Table.player_width / 2) <= Table.ball_radius:  # Collisions
                         x = self.pos_x - (collision_box["center_x"] - Table.player_thickness / 2)
                         y = self.pos_y - (collision_box["center_y"] + Table.player_width / 2)
                         c = - 2 * (self.vel_x * x + self.vel_y * y) / (x**2 + y**2)
@@ -245,7 +248,7 @@ class Ball:
                         self.pos_y = ((collision_box["center_x"] - Table.player_thickness / 2) - self.pos_x) * tan_a + (collision_box["center_y"] + Table.player_width / 2)
 
                 elif (self.pos_x >= collision_box["center_x"] + Table.player_thickness / 2) and (self.pos_y <= collision_box["center_y"] - Table.player_width / 2):  # Upper right corner
-                    if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] + Table.player_thickness / 2, collision_box["center_y"] - Table.player_width / 2) <= Table.ball_radius:  # Collsions
+                    if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] + Table.player_thickness / 2, collision_box["center_y"] - Table.player_width / 2) <= Table.ball_radius:  # Collisions
                         x = self.pos_x - (collision_box["center_x"] + Table.player_thickness / 2)
                         y = self.pos_y - (collision_box["center_y"] - Table.player_width / 2)
                         c = - 2 * (self.vel_x * x + self.vel_y * y) / (x**2 + y**2)
@@ -256,7 +259,7 @@ class Ball:
                         self.pos_y = ((collision_box["center_x"] + Table.player_thickness / 2) - self.pos_x) * tan_a + (collision_box["center_y"] - Table.player_width / 2)
 
                 elif (self.pos_x >= collision_box["center_x"] + Table.player_thickness / 2) and (self.pos_y >= collision_box["center_y"] + Table.player_width / 2):  # Lower right corner
-                    if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] + Table.player_thickness / 2, collision_box["center_y"] + Table.player_width / 2) <= Table.ball_radius:  # Collsions
+                    if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] + Table.player_thickness / 2, collision_box["center_y"] + Table.player_width / 2) <= Table.ball_radius:  # Collisions
                         x = self.pos_x - (collision_box["center_x"] + Table.player_thickness / 2)
                         y = self.pos_y - (collision_box["center_y"] + Table.player_width / 2)
                         c = - 2 * (self.vel_x * x + self.vel_y * y) / (x**2 + y**2)
@@ -270,7 +273,7 @@ class Ball:
                 self.pos_x = Table.ball_radius + 1
                 self.vel_x = (- self.vel_x) * Table.edge_hit_cin_energy_efficiency
                 self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
-                if ((self.pos_y - Table.ball_radius) >= (Table.width / 2 - Table.goal_width / 2)) and ((self.pos_y + Table.ball_radius) <= (Table.width / 2 + Table.goal_width / 2)):
+                if (self.pos_y >= (Table.width / 2 - Table.goal_width / 2)) and (self.pos_y <= (Table.width / 2 + Table.goal_width / 2)):
                     self.game.opponents[1].score += 1
                     self.game.last_goal_frame = self.game.current_frame
                     self.pos_x = Table.length / 2
@@ -299,7 +302,6 @@ class Ball:
                 self.pos_y = Table.width - Table.ball_radius - 1
                 self.vel_x = self.vel_x * Table.edge_hit_cin_energy_efficiency
                 self.vel_y = (- self.vel_y) * Table.edge_hit_cin_energy_efficiency
-
 
     def update(self):
         self.vel_x += self.acc_x
@@ -339,6 +341,7 @@ class Game:
         self.last_goal_frame = 0
         self.game_start_frame = 0
         self.current_frame = 0
+        self.game_num = 0
         for i in range(2):
             self.opponents.append(Opponent(i, self))
 
@@ -365,7 +368,7 @@ class Game:
                 self.max_score = self.opponents[1].score
                 self.best_player = 1
 
-            if self.max_score >= 11:
+            if self.max_score >= Table.max_score:
                 self.game_over = True
 
             pygame.draw.rect(screen, Table.goal_color,
@@ -380,183 +383,22 @@ class Game:
         if self.current_frame >= Table.max_game_frames:  # End game after certain number of frames
             self.game_over = True
 
-    # def run(self):
-    #     while True and self.max_score < 11:
-    #         for event in pygame.event.get():
-    #             if event.type == pygame.QUIT:
-    #                 pygame.quit()
-    #                 exit(0)
-    #
-    #                 # Controls: pressing and holding various keys subjects the sticks to acceleration, both for shifting
-    #                 # and for rotating
-    #                 # Releasing the key will instantly stop the current translation or rotation
-    #
-    #             if event.type == pygame.KEYDOWN:
-    #
-    #                 # Player 1 controls
-    #
-    #                 if event.key == pygame.K_s:
-    #                     self.opponents[0].sticks[0].lin_acc = -Table.key_lin_acc
-    #                 elif event.key == pygame.K_x:
-    #                     self.opponents[0].sticks[0].lin_acc = Table.key_lin_acc
-    #                 if event.key == pygame.K_z:
-    #                     self.opponents[0].sticks[0].rot_acc = -Table.key_rot_acc
-    #                 elif event.key == pygame.K_c:
-    #                     self.opponents[0].sticks[0].rot_acc = Table.key_rot_acc
-    #
-    #                 if event.key == pygame.K_g:
-    #                     self.opponents[0].sticks[1].lin_acc = -Table.key_lin_acc
-    #                 elif event.key == pygame.K_b:
-    #                     self.opponents[0].sticks[1].lin_acc = Table.key_lin_acc
-    #                 if event.key == pygame.K_v:
-    #                     self.opponents[0].sticks[1].rot_acc = -Table.key_rot_acc
-    #                 elif event.key == pygame.K_n:
-    #                     self.opponents[0].sticks[1].rot_acc = Table.key_rot_acc
-    #
-    #                 if event.key == pygame.K_k:
-    #                     self.opponents[0].sticks[2].lin_acc = -Table.key_lin_acc
-    #                 elif event.key == pygame.K_COMMA:
-    #                     self.opponents[0].sticks[2].lin_acc = Table.key_lin_acc
-    #                 if event.key == pygame.K_m:
-    #                     self.opponents[0].sticks[2].rot_acc = -Table.key_rot_acc
-    #                 elif event.key == pygame.K_PERIOD:
-    #                     self.opponents[0].sticks[2].rot_acc = Table.key_rot_acc
-    #
-    #                 if event.key == pygame.K_UP:
-    #                     self.opponents[0].sticks[3].lin_acc = -Table.key_lin_acc
-    #                 elif event.key == pygame.K_DOWN:
-    #                     self.opponents[0].sticks[3].lin_acc = Table.key_lin_acc
-    #                 if event.key == pygame.K_LEFT:
-    #                     self.opponents[0].sticks[3].rot_acc = -Table.key_rot_acc
-    #                 elif event.key == pygame.K_RIGHT:
-    #                     self.opponents[0].sticks[3].rot_acc = Table.key_rot_acc
-    #
-    #                     # Player 2 controls
-    #
-    #                 if event.key == pygame.K_2:
-    #                     self.opponents[1].sticks[3].lin_acc = -Table.key_lin_acc
-    #                 elif event.key == pygame.K_w:
-    #                     self.opponents[1].sticks[3].lin_acc = Table.key_lin_acc
-    #                 if event.key == pygame.K_q:
-    #                     self.opponents[1].sticks[3].rot_acc = -Table.key_rot_acc
-    #                 elif event.key == pygame.K_e:
-    #                     self.opponents[1].sticks[3].rot_acc = Table.key_rot_acc
-    #
-    #                 if event.key == pygame.K_5:
-    #                     self.opponents[1].sticks[2].lin_acc = -Table.key_lin_acc
-    #                 elif event.key == pygame.K_t:
-    #                     self.opponents[1].sticks[2].lin_acc = Table.key_lin_acc
-    #                 if event.key == pygame.K_r:
-    #                     self.opponents[1].sticks[2].rot_acc = -Table.key_rot_acc
-    #                 elif event.key == pygame.K_y:
-    #                     self.opponents[1].sticks[2].rot_acc = Table.key_rot_acc
-    #
-    #                 if event.key == pygame.K_8:
-    #                     self.opponents[1].sticks[1].lin_acc = -Table.key_lin_acc
-    #                 elif event.key == pygame.K_i:
-    #                     self.opponents[1].sticks[1].lin_acc = Table.key_lin_acc
-    #                 if event.key == pygame.K_u:
-    #                     self.opponents[1].sticks[1].rot_acc = -Table.key_rot_acc
-    #                 elif event.key == pygame.K_o:
-    #                     self.opponents[1].sticks[1].rot_acc = Table.key_rot_acc
-    #
-    #                 if event.key == pygame.K_MINUS:
-    #                     self.opponents[1].sticks[0].lin_acc = -Table.key_lin_acc
-    #                 elif event.key == pygame.K_LEFTBRACKET:
-    #                     self.opponents[1].sticks[0].lin_acc = Table.key_lin_acc
-    #                 if event.key == pygame.K_p:
-    #                     self.opponents[1].sticks[0].rot_acc = -Table.key_rot_acc
-    #                 elif event.key == pygame.K_RIGHTBRACKET:
-    #                     self.opponents[1].sticks[0].rot_acc = Table.key_rot_acc
-    #
-    #             if event.type == pygame.KEYUP:
-    #
-    #                 # Player 1 controls
-    #
-    #                 if event.key == pygame.K_s or event.key == pygame.K_x:
-    #                     self.opponents[0].sticks[0].lin_acc = 0
-    #                     self.opponents[0].sticks[0].lin_vel = 0
-    #                 if event.key == pygame.K_z or event.key == pygame.K_c:
-    #                     self.opponents[0].sticks[0].rot_acc = 0
-    #                     self.opponents[0].sticks[0].rot_vel = 0
-    #
-    #                 if event.key == pygame.K_g or event.key == pygame.K_b:
-    #                     self.opponents[0].sticks[1].lin_acc = 0
-    #                     self.opponents[0].sticks[1].lin_vel = 0
-    #                 if event.key == pygame.K_v or event.key == pygame.K_n:
-    #                     self.opponents[0].sticks[1].rot_acc = 0
-    #                     self.opponents[0].sticks[1].rot_vel = 0
-    #
-    #                 if event.key == pygame.K_k or event.key == pygame.K_COMMA:
-    #                     self.opponents[0].sticks[2].lin_acc = 0
-    #                     self.opponents[0].sticks[2].lin_vel = 0
-    #                 if event.key == pygame.K_m or event.key == pygame.K_PERIOD:
-    #                     self.opponents[0].sticks[2].rot_acc = 0
-    #                     self.opponents[0].sticks[2].rot_vel = 0
-    #
-    #                 if event.key == pygame.K_UP or event.key == pygame.K_DOWN:
-    #                     self.opponents[0].sticks[3].lin_acc = 0
-    #                     self.opponents[0].sticks[3].lin_vel = 0
-    #                 if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-    #                     self.opponents[0].sticks[3].rot_acc = 0
-    #                     self.opponents[0].sticks[3].rot_vel = 0
-    #
-    #                     # Player 2 controls
-    #
-    #                 if event.key == pygame.K_2 or event.key == pygame.K_w:
-    #                     self.opponents[1].sticks[3].lin_acc = 0
-    #                     self.opponents[1].sticks[3].lin_vel = 0
-    #                 if event.key == pygame.K_q or event.key == pygame.K_e:
-    #                     self.opponents[1].sticks[3].rot_acc = 0
-    #                     self.opponents[1].sticks[3].rot_vel = 0
-    #
-    #                 if event.key == pygame.K_5 or event.key == pygame.K_t:
-    #                     self.opponents[1].sticks[2].lin_acc = 0
-    #                     self.opponents[1].sticks[2].lin_vel = 0
-    #                 if event.key == pygame.K_r or event.key == pygame.K_y:
-    #                     self.opponents[1].sticks[2].rot_acc = 0
-    #                     self.opponents[1].sticks[2].rot_vel = 0
-    #
-    #                 if event.key == pygame.K_8 or event.key == pygame.K_i:
-    #                     self.opponents[1].sticks[1].lin_acc = 0
-    #                     self.opponents[1].sticks[1].lin_vel = 0
-    #                 if event.key == pygame.K_u or event.key == pygame.K_o:
-    #                     self.opponents[1].sticks[1].rot_acc = 0
-    #                     self.opponents[1].sticks[1].rot_vel = 0
-    #
-    #                 if event.key == pygame.K_MINUS or event.key == pygame.K_LEFTBRACKET:
-    #                     self.opponents[1].sticks[0].lin_acc = 0
-    #                     self.opponents[1].sticks[0].lin_vel = 0
-    #                 if event.key == pygame.K_p or event.key == pygame.K_RIGHTBRACKET:
-    #                     self.opponents[1].sticks[0].rot_acc = 0
-    #                     self.opponents[1].sticks[0].rot_vel = 0
-    #
-    #         screen.fill(0)
-    #         self.update_all()
-    #         self.draw_all()
-    #         pygame.display.set_caption(
-    #             "Player 1: %d                Player 2: %d" % (self.opponents[0].score, self.opponents[1].score))
-    #         pygame.display.flip()
-    #
-    #         sleep(0.01)
 
-
-# def run_networks_worker(partial_game_list):
-
-            
 def run_all_games_single_window(games):
+    global active_game
+    global show_all_games
+
     all_games_done = False
-    active_game = -1
-    show_all_games = True
 
     last_framerate_update = datetime.now()
     recent_frametimes = []
 
+    frame_start_timestamp = datetime.now()
+
     while True and not all_games_done:
 
-        frame_start_timestamp = datetime.now()
-
         for game in games:
+            # print(str(game.game_num))
             opponent = game.opponents[0]
             inputs0 = []
             for stick in opponent.sticks:
@@ -719,7 +561,6 @@ def run_all_games_single_window(games):
                 elif event.key == pygame.K_RIGHTBRACKET:
                     games[active_game].opponents[1].sticks[0].rot_acc = Table.key_rot_acc
 
-
                 if event.key == pygame.K_1:
                     active_game -= 1
                     active_game %= len(games)
@@ -791,7 +632,10 @@ def run_all_games_single_window(games):
                     games[active_game].opponents[1].sticks[0].rot_acc = 0
                     games[active_game].opponents[1].sticks[0].rot_vel = 0
 
+
         all_games_done = True
+
+        screen.fill(0)
 
         for game in games:  # Run all games
             game.update_all()
@@ -799,26 +643,29 @@ def run_all_games_single_window(games):
                 game.draw_all()
             all_games_done = all_games_done and game.game_over
 
-
         if not show_all_games:
             games[active_game].draw_all()
 
         pygame.display.flip()
-        screen.fill(0)
 
-        sleep(0.01)
+        now = datetime.now()
+        if (now - frame_start_timestamp).total_seconds() < 1 / max_frame_rate:
+            sleep_time = 1 / max_frame_rate - (now - frame_start_timestamp).total_seconds()
+            sleep(sleep_time)
 
         frame_end_timestamp = datetime.now()
         frametime = (frame_end_timestamp - frame_start_timestamp).total_seconds()
         recent_frametimes.append(frametime)
         if (frame_end_timestamp - last_framerate_update).total_seconds() >= 0.5:
+            last_framerate_update = datetime.now()
             average_frametime = sum(recent_frametimes) / len(recent_frametimes)
+            recent_frametimes = []
             pygame.display.set_caption("Player 1: %d                Player 2: %d              Active Game: %d                    Framerate: %f" % (games[active_game].opponents[0].score, games[active_game].opponents[1].score, active_game, 1 / average_frametime))
-        
+
+        frame_start_timestamp = datetime.now()
         
 
-
-environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (50, 50)
+environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (0, 50)
 pygame.init()
 screen = pygame.display.set_mode((Table.length, Table.width))
 screen.fill(0)
@@ -830,17 +677,31 @@ currentPop.save_net_to_file()
 while True:
 
     games = []  # New array of games to be played
-    
-    for network1_num in range(0, Population.size - 1):
-        for network2_num in range(network1_num + 1, Population.size):
-            new_game = Game()
-            new_game.opponents[0].brain = currentPop.all_nets[network1_num]
-            new_game.opponents[1].brain = currentPop.all_nets[network2_num]
-            games.append(new_game)
+
+    for i in range(0, Population.size, 2):
+        new_game = Game()
+        new_game.opponents[0].brain = currentPop.all_nets[i]
+        new_game.opponents[1].brain = currentPop.all_nets[i + 1]
+        games.append(new_game)
 
     run_all_games_single_window(games)
 
-    currentPop.gen += 1
+    for game in games:
+        fitness0 = game.opponents[0].brain.fitness
+        fitness1 = game.opponents[1].brain.fitness
+        if game.opponents[0].score == 0:
+            game.opponents[0].brain.calc_fitness(0, (Table.max_game_frames - game.current_frame) / Table.max_game_frames, fitness1 / currentPop.best_fitness)
+        else:
+            game.opponents[0].brain.calc_fitness((game.opponents[0].score - game.opponents[1].score + Table.max_score) / (2 * Table.max_score), (Table.max_game_frames - game.current_frame) / Table.max_game_frames, fitness1 / currentPop.best_fitness)
+
+        if game.opponents[1].score == 0:
+            game.opponents[1].brain.calc_fitness(0, (Table.max_game_frames - game.current_frame) / Table.max_game_frames, fitness0 / currentPop.best_fitness)
+        else:
+            game.opponents[1].brain.calc_fitness((game.opponents[1].score - game.opponents[0].score + Table.max_score) / (2 * Table.max_score), (Table.max_game_frames - game.current_frame) / Table.max_game_frames, fitness0 / currentPop.best_fitness)
+
+    currentPop.set_best_player()
+
+    currentPop.generate_offspring()
+
     currentPop.save_net_to_file()
     print(currentPop.gen)
-

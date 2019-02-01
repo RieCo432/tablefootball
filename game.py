@@ -4,7 +4,7 @@ from time import sleep
 from os import environ
 from math import sin, floor, pi, sqrt, tan, atan
 from NeuralNet import Population
-
+from sys import argv
 
 max_frame_rate = 480
 active_game = 0
@@ -215,6 +215,7 @@ class Ball:
                             self.pos_x = collision_box["center_x"] - Table.player_thickness / 2 - Table.ball_radius - 1
                         self.vel_x = (- self.vel_x) * Table.player_hit_cin_energy_efficiency + opponent.sticks[collision_box["playerRole"]].rot_vel * Table.player_height  # Change velocity sign and account for energy loss and add player rot speed
                         self.vel_y = self.vel_y * Table.player_hit_cin_energy_efficiency  # Change velocity sign and account for energy loss
+                        opponent.brain.hit_ball = True
 
                 elif (collision_box["center_x"] - Table.player_thickness / 2) <= self.pos_x <= (collision_box["center_x"] + Table.player_thickness / 2):
                     if ((self.pos_y + Table.ball_radius) >= collision_box["center_y"] - Table.player_width / 2) and ((self.pos_y - Table.ball_radius) <= collision_box["center_y"] + Table.player_width / 2):
@@ -224,6 +225,7 @@ class Ball:
                             self.pos_y = collision_box["center_y"] - Table.player_width / 2 - Table.ball_radius - 1
                         self.vel_x = self.vel_x * Table.player_hit_cin_energy_efficiency   # Change velocity sign and account for energy loss
                         self.vel_y = (- self.vel_y) * Table.player_hit_cin_energy_efficiency + opponent.sticks[collision_box["playerRole"]].lin_vel  # Change velocity sign and account for energy loss and add player lin speed
+                        opponent.brain.hit_ball = True
 
                 elif (self.pos_x <= collision_box["center_x"] - Table.player_thickness / 2) and (self.pos_y <= collision_box["center_y"] - Table.player_width / 2):  # Upper left corner
                     if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] - Table.player_thickness / 2, collision_box["center_y"] - Table.player_width / 2) <= Table.ball_radius:  # Collisions
@@ -235,6 +237,7 @@ class Ball:
                         tan_a = ((collision_box["center_y"] - Table.player_width / 2) - self.pos_y) / (((collision_box["center_x"]) - Table.player_thickness / 2) - self.pos_x)
                         self.pos_x = (collision_box["center_x"] - Table.player_thickness / 2) - (Table.ball_radius + 1) / (sqrt(1 + tan_a ** 2))
                         self.pos_y = (self.pos_x - (collision_box["center_x"] - Table.player_thickness / 2)) * tan_a + (collision_box["center_y"] - Table.player_width / 2)
+                        opponent.brain.hit_ball = True
 
                 elif (self.pos_x <= collision_box["center_x"] - Table.player_thickness / 2) and (self.pos_y >= collision_box["center_y"] + Table.player_width / 2):  # Lower left corner
                     if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] - Table.player_thickness / 2, collision_box["center_y"] + Table.player_width / 2) <= Table.ball_radius:  # Collisions
@@ -246,6 +249,7 @@ class Ball:
                         tan_a = (self.pos_y - (collision_box["center_y"] + Table.player_width / 2)) / (((collision_box["center_x"]) - Table.player_thickness / 2) - self.pos_x)
                         self.pos_x = (collision_box["center_x"] - Table.player_thickness / 2) - (Table.ball_radius + 1) / (sqrt(1 + tan_a ** 2))
                         self.pos_y = ((collision_box["center_x"] - Table.player_thickness / 2) - self.pos_x) * tan_a + (collision_box["center_y"] + Table.player_width / 2)
+                        opponent.brain.hit_ball = True
 
                 elif (self.pos_x >= collision_box["center_x"] + Table.player_thickness / 2) and (self.pos_y <= collision_box["center_y"] - Table.player_width / 2):  # Upper right corner
                     if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] + Table.player_thickness / 2, collision_box["center_y"] - Table.player_width / 2) <= Table.ball_radius:  # Collisions
@@ -257,6 +261,7 @@ class Ball:
                         tan_a = ((collision_box["center_y"] - Table.player_width / 2) - self.pos_y) / (self.pos_x - ((collision_box["center_x"]) + Table.player_thickness / 2))
                         self.pos_x = + (collision_box["center_x"] + Table.player_thickness / 2) + (Table.ball_radius + 1) / (sqrt(1 + tan_a**2))
                         self.pos_y = ((collision_box["center_x"] + Table.player_thickness / 2) - self.pos_x) * tan_a + (collision_box["center_y"] - Table.player_width / 2)
+                        opponent.brain.hit_ball = True
 
                 elif (self.pos_x >= collision_box["center_x"] + Table.player_thickness / 2) and (self.pos_y >= collision_box["center_y"] + Table.player_width / 2):  # Lower right corner
                     if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] + Table.player_thickness / 2, collision_box["center_y"] + Table.player_width / 2) <= Table.ball_radius:  # Collisions
@@ -268,6 +273,7 @@ class Ball:
                         tan_a = (self.pos_y - (collision_box["center_y"] + Table.player_width / 2)) / (self.pos_x - ((collision_box["center_x"]) + Table.player_thickness / 2))
                         self.pos_x = + (collision_box["center_x"] + Table.player_thickness / 2) + (Table.ball_radius + 1) / (sqrt(1 + tan_a**2))
                         self.pos_y = (self.pos_x - (collision_box["center_x"] + Table.player_thickness / 2)) * tan_a + (collision_box["center_y"] + Table.player_width / 2)
+                        opponent.brain.hit_ball = True
 
             if self.pos_x - Table.ball_radius <= 0:  # Left edge collision
                 self.pos_x = Table.ball_radius + 1
@@ -275,6 +281,7 @@ class Ball:
                 self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
                 if (self.pos_y >= (Table.width / 2 - Table.goal_width / 2)) and (self.pos_y <= (Table.width / 2 + Table.goal_width / 2)):
                     self.game.opponents[1].score += 1
+                    self.game.opponents[1].brain.scored = True
                     self.game.last_goal_frame = self.game.current_frame
                     self.pos_x = Table.length / 2
                     self.pos_y = Table.width / 2
@@ -287,6 +294,7 @@ class Ball:
                 self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
                 if ((self.pos_y - Table.ball_radius) >= (Table.width / 2 - Table.goal_width / 2)) and ((self.pos_y + Table.ball_radius) <= (Table.width / 2 + Table.goal_width / 2)):
                     self.game.opponents[0].score += 1
+                    self.game.opponents[0].brain.scored = True
                     self.game.last_goal_frame = self.game.current_frame
                     self.pos_x = Table.length / 2
                     self.pos_y = Table.width / 2
@@ -670,9 +678,12 @@ pygame.init()
 screen = pygame.display.set_mode((Table.length, Table.width))
 screen.fill(0)
 
-currentPop = Population()  # New population
+if len(argv) >= 2:
+    currentPop = Population(argv[1])  # Load existing population
+else:
+    currentPop = Population()  # New population
 # print(currentPop.all_nets)
-currentPop.save_net_to_file()
+currentPop.save_to_file()
 
 while True:
 
@@ -703,5 +714,5 @@ while True:
 
     currentPop.generate_offspring()
 
-    currentPop.save_net_to_file()
+    currentPop.save_to_file()
     print(currentPop.gen)

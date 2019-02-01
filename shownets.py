@@ -4,6 +4,7 @@ from datetime import datetime
 
 import pygame
 from os import environ
+from sys import argv
 from math import ceil
 
 environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (1210, 50)
@@ -16,7 +17,7 @@ screen.fill(0)
 
 def load(old_nets):
     try:
-        with open("neuralnet.json", "r") as fin:
+        with open(argv[1], "r") as fin:
             nets_dict = json.load(fin)
 
             nets = nets_dict["nets"]

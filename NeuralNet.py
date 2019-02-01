@@ -1,6 +1,8 @@
+from datetime import datetime
 from random import uniform, randint, random
 from math import e
 import json
+from os import path
 from copy import deepcopy
 
 def sigmoid(x):
@@ -47,6 +49,8 @@ class Brain:
         self.output_nodes = output_nodes
         self.fitness = 0
         self.is_best = False
+        self.hit_ball = False
+        self.scored = False
         self.all_nodes = []
         self.all_connections = []
         # self.all_conn_str_list = []
@@ -67,7 +71,17 @@ class Brain:
             self.new_rand_connection()
 
     def calc_fitness(self, goal_difference_ratio, game_duration_ratio, opponent_fitness_ratio):
-        self.fitness = goal_difference_ratio + game_duration_ratio + opponent_fitness_ratio
+        if self.hit_ball:
+            ball_hit_bonus = 1
+        else:
+            ball_hit_bonus = 0
+
+        if self.scored:
+            scored_goal_bonus = 2
+        else:
+            scored_goal_bonus = 0
+
+        self.fitness = goal_difference_ratio + game_duration_ratio + opponent_fitness_ratio + ball_hit_bonus + scored_goal_bonus
         # print(self.fitness)
 
     def put_input(self, input_data):
@@ -183,15 +197,45 @@ class Population:
 
     size = 200
 
-    def __init__(self):
+    def __init__(self, filename=None):
         self.all_nets = []
         self.gen = 1
         self.best_fitness = 1
         self.max_fit_index = 0
         self.max_fit_index2 = 0
         self.fitness_sum = 0
-        for i in range(Population.size):
-            self.all_nets.append(Brain(36, 8))
+
+        if filename is None:
+            date = datetime.now()
+            self.filename = "population%d-%d-%d-%d-%d-%d.json" % (date.year, date.month, date.day, date.hour, date.minute, date.second)
+        else:
+            self.filename = filename
+
+        if path.isfile(self.filename):
+            with open(self.filename, "r") as fin:
+                population_dict = json.load(fin)
+
+                self.gen = population_dict["gen"]
+                nets = deepcopy(population_dict["nets"])
+                for net in nets:
+                    import_net = Brain(36, 8)
+                    import_nodes = []
+                    for node in net["nodes"]:
+                        import_node = Node()
+                        import_node.layer = node["layer"]
+                        import_node.connections = node["connections"]
+                        import_nodes.append(import_node)
+                    import_connections = []
+                    for connection in net["connections"]:
+                        import_connection = Connection(connection["from"], connection["to"], connection["conn_num"], connection["weight"])
+                        import_connections.append(import_connection)
+                    import_net.all_connections = deepcopy(import_connections)
+                    import_net.all_nodes = deepcopy(import_nodes)
+                    self.all_nets.append(import_net)
+
+        else:
+            for i in range(Population.size):
+                self.all_nets.append(Brain(36, 8))
 
     def set_best_player(self):
         max_fit = 0
@@ -257,9 +301,9 @@ class Population:
             if running_sum >= rand:
                 return i
 
-    def save_net_to_file(self):
+    def save_to_file(self):
         net_count = 0
-        all_nets_dict = {"gen": self.gen, "nets": []}
+        population_dict = {"gen": self.gen, "nets": []}
         for net in self.all_nets:
             output_layer = net.all_nodes[43].layer
             nodes = []
@@ -269,8 +313,8 @@ class Population:
             for connection in net.all_connections:
                 connections.append({"from": connection.from_node, "to": connection.to_node, "weight": connection.weight, "conn_num": connection.conn_num})
             final_net_dict = {"last_layer": output_layer, "nodes": nodes, "connections": connections}
-            all_nets_dict["nets"].append(final_net_dict)
+            population_dict["nets"].append(final_net_dict)
             net_count += 1
 
-        with open("neuralnet.json", "w") as fout:
-            json.dump(all_nets_dict, fout)
+        with open(self.filename, "w") as fout:
+            json.dump(population_dict, fout)

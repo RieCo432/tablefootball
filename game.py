@@ -295,8 +295,8 @@ class Ball:
                         stick.rot_acc = 0
                 self.pos_x = Table.length / 2
                 self.pos_y = Table.width / 2
-                self.vel_x = uniform(-0.1, 0.1) * Table.ball_max_vel
-                self.vel_y = uniform(-0.1, 0.1) * Table.ball_max_vel
+                self.vel_x = uniform(-0.2, 0.2) * Table.ball_max_vel
+                self.vel_y = uniform(-0.2, 0.2) * Table.ball_max_vel
 
         if self.pos_x + Table.ball_radius >= Table.length:  # Right edge collision
             self.pos_x = Table.length - Table.ball_radius - 1
@@ -317,8 +317,8 @@ class Ball:
                         stick.rot_acc = 0
                 self.pos_x = Table.length / 2
                 self.pos_y = Table.width / 2
-                self.vel_x = uniform(-0.1, 0.1) * Table.ball_max_vel
-                self.vel_y = uniform(-0.1, 0.1) * Table.ball_max_vel
+                self.vel_x = uniform(-0.2, 0.2) * Table.ball_max_vel
+                self.vel_y = uniform(-0.2, 0.2) * Table.ball_max_vel
 
         if self.pos_y - Table.ball_radius <= 0:  # Upper edge collision
             self.pos_y = Table.ball_radius + 1

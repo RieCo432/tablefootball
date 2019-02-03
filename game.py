@@ -275,41 +275,59 @@ class Ball:
                         self.pos_y = (self.pos_x - (collision_box["center_x"] + Table.player_thickness / 2)) * tan_a + (collision_box["center_y"] + Table.player_width / 2)
                         opponent.brain.hit_ball = True
 
-            if self.pos_x - Table.ball_radius <= 0:  # Left edge collision
-                self.pos_x = Table.ball_radius + 1
-                self.vel_x = (- self.vel_x) * Table.edge_hit_cin_energy_efficiency
-                self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
-                if (self.pos_y >= (Table.width / 2 - Table.goal_width / 2)) and (self.pos_y <= (Table.width / 2 + Table.goal_width / 2)):
-                    self.game.opponents[1].score += 1
-                    self.game.opponents[1].brain.scored = True
-                    self.game.last_goal_frame = self.game.current_frame
-                    self.pos_x = Table.length / 2
-                    self.pos_y = Table.width / 2
-                    self.vel_x = 0
-                    self.vel_y = 0
+        if self.pos_x - Table.ball_radius <= 0:  # Left edge collision
+            self.pos_x = Table.ball_radius + 1
+            self.vel_x = (- self.vel_x) * Table.edge_hit_cin_energy_efficiency
+            self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
+            if (self.pos_y >= (Table.width / 2 - Table.goal_width / 2)) and (
+                    self.pos_y <= (Table.width / 2 + Table.goal_width / 2)):
+                self.game.opponents[1].score += 1
+                self.game.opponents[1].brain.scored = True
+                self.game.last_goal_frame = self.game.current_frame
+                for opponent in self.game.opponents:
+                    for stick in opponent.sticks:
+                        stick.lin_pos = 0
+                        stick.lin_vel = 0
+                        stick.lin_acc = 0
+                        stick.rot_pos = 0
+                        stick.rot_vel = 0
+                        stick.rot_acc = 0
+                self.pos_x = Table.length / 2
+                self.pos_y = Table.width / 2
+                self.vel_x = 0
+                self.vel_y = 0
 
-            if self.pos_x + Table.ball_radius >= Table.length:  # Right edge collision
-                self.pos_x = Table.length - Table.ball_radius - 1
-                self.vel_x = (- self.vel_x) * Table.edge_hit_cin_energy_efficiency
-                self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
-                if ((self.pos_y - Table.ball_radius) >= (Table.width / 2 - Table.goal_width / 2)) and ((self.pos_y + Table.ball_radius) <= (Table.width / 2 + Table.goal_width / 2)):
-                    self.game.opponents[0].score += 1
-                    self.game.opponents[0].brain.scored = True
-                    self.game.last_goal_frame = self.game.current_frame
-                    self.pos_x = Table.length / 2
-                    self.pos_y = Table.width / 2
-                    self.vel_x = 0
-                    self.vel_y = 0
+        if self.pos_x + Table.ball_radius >= Table.length:  # Right edge collision
+            self.pos_x = Table.length - Table.ball_radius - 1
+            self.vel_x = (- self.vel_x) * Table.edge_hit_cin_energy_efficiency
+            self.vel_y = self.vel_y * Table.edge_hit_cin_energy_efficiency
+            if ((self.pos_y - Table.ball_radius) >= (Table.width / 2 - Table.goal_width / 2)) and (
+                    (self.pos_y + Table.ball_radius) <= (Table.width / 2 + Table.goal_width / 2)):
+                self.game.opponents[0].score += 1
+                self.game.opponents[0].brain.scored = True
+                self.game.last_goal_frame = self.game.current_frame
+                for opponent in self.game.opponents:
+                    for stick in opponent.sticks:
+                        stick.lin_pos = 0
+                        stick.lin_vel = 0
+                        stick.lin_acc = 0
+                        stick.rot_pos = 0
+                        stick.rot_vel = 0
+                        stick.rot_acc = 0
+                self.pos_x = Table.length / 2
+                self.pos_y = Table.width / 2
+                self.vel_x = 0
+                self.vel_y = 0
 
-            if self.pos_y - Table.ball_radius <= 0:  # Upper edge collision
-                self.pos_y = Table.ball_radius + 1
-                self.vel_x = self.vel_x * Table.edge_hit_cin_energy_efficiency
-                self.vel_y = (- self.vel_y) * Table.edge_hit_cin_energy_efficiency
+        if self.pos_y - Table.ball_radius <= 0:  # Upper edge collision
+            self.pos_y = Table.ball_radius + 1
+            self.vel_x = self.vel_x * Table.edge_hit_cin_energy_efficiency
+            self.vel_y = (- self.vel_y) * Table.edge_hit_cin_energy_efficiency
 
-            if self.pos_y + Table.ball_radius >= Table.width:  # Lower edge collision
-                self.pos_y = Table.width - Table.ball_radius - 1
-                self.vel_x = self.vel_x * Table.edge_hit_cin_energy_efficiency
-                self.vel_y = (- self.vel_y) * Table.edge_hit_cin_energy_efficiency
+        if self.pos_y + Table.ball_radius >= Table.width:  # Lower edge collision
+            self.pos_y = Table.width - Table.ball_radius - 1
+            self.vel_x = self.vel_x * Table.edge_hit_cin_energy_efficiency
+            self.vel_y = (- self.vel_y) * Table.edge_hit_cin_energy_efficiency
 
     def update(self):
         self.vel_x += self.acc_x
@@ -640,7 +658,6 @@ def run_all_games_single_window(games):
                     games[active_game].opponents[1].sticks[0].rot_acc = 0
                     games[active_game].opponents[1].sticks[0].rot_vel = 0
 
-
         all_games_done = True
 
         screen.fill(0)
@@ -700,15 +717,8 @@ while True:
     for game in games:
         fitness0 = game.opponents[0].brain.fitness
         fitness1 = game.opponents[1].brain.fitness
-        if game.opponents[0].score == 0:
-            game.opponents[0].brain.calc_fitness(0, (Table.max_game_frames - game.current_frame) / Table.max_game_frames, fitness1 / currentPop.best_fitness)
-        else:
-            game.opponents[0].brain.calc_fitness((game.opponents[0].score - game.opponents[1].score + Table.max_score) / (2 * Table.max_score), (Table.max_game_frames - game.current_frame) / Table.max_game_frames, fitness1 / currentPop.best_fitness)
-
-        if game.opponents[1].score == 0:
-            game.opponents[1].brain.calc_fitness(0, (Table.max_game_frames - game.current_frame) / Table.max_game_frames, fitness0 / currentPop.best_fitness)
-        else:
-            game.opponents[1].brain.calc_fitness((game.opponents[1].score - game.opponents[0].score + Table.max_score) / (2 * Table.max_score), (Table.max_game_frames - game.current_frame) / Table.max_game_frames, fitness0 / currentPop.best_fitness)
+        game.opponents[0].brain.calc_fitness((game.opponents[0].score - game.opponents[1].score + Table.max_score) / (2 * Table.max_score), (Table.max_game_frames - game.current_frame) / Table.max_game_frames, fitness1 / currentPop.best_fitness)
+        game.opponents[1].brain.calc_fitness((game.opponents[1].score - game.opponents[0].score + Table.max_score) / (2 * Table.max_score), (Table.max_game_frames - game.current_frame) / Table.max_game_frames, fitness0 / currentPop.best_fitness)
 
     currentPop.set_best_player()
 

@@ -72,12 +72,12 @@ class Brain:
 
     def calc_fitness(self, goal_difference_ratio, game_duration_ratio, opponent_fitness_ratio):
         if self.hit_ball:
-            ball_hit_bonus = 1
+            ball_hit_bonus = 3
         else:
             ball_hit_bonus = 0
 
         if self.scored:
-            scored_goal_bonus = 2
+            scored_goal_bonus = 6
         else:
             scored_goal_bonus = 0
 

@@ -690,7 +690,7 @@ def run_all_games_single_window(games):
         frame_start_timestamp = datetime.now()
         
 
-environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (0, 50)
+environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (0, 30)
 pygame.init()
 screen = pygame.display.set_mode((Table.length, Table.width))
 screen.fill(0)

@@ -7,7 +7,7 @@ from os import environ
 from sys import argv
 from math import ceil
 
-environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (1210, 50)
+environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (1210, 30)
 pygame.init()
 width = 700
 height = 1000

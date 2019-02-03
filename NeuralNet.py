@@ -59,9 +59,9 @@ class Brain:
             self.add_node(autolayer=False)
             self.all_nodes[self.node_num].layer = 0
 
-        self.add_node(autolayer=False)  # Bias Node
-        self.all_nodes[self.node_num].layer = 0
-        self.all_nodes[self.node_num].output_value = 1
+        # self.add_node(autolayer=False)  # Bias Node
+        # self.all_nodes[self.node_num].layer = 0
+        # self.all_nodes[self.node_num].output_value = 1
 
         for i in range(output_nodes):  # Create output nodes
             self.add_node(autolayer=False)
@@ -92,7 +92,10 @@ class Brain:
 
     def get_outputs(self):
         output_list = []
-        for output_node in self.all_nodes[self.input_nodes + 1: self.input_nodes + 1 + self.output_nodes]:
+        # for output_node in self.all_nodes[self.input_nodes + 1: self.input_nodes + 1 + self.output_nodes]:  # With bias node
+        #     output_list.append(output_node.output_value)
+
+        for output_node in self.all_nodes[self.input_nodes: self.input_nodes + self.output_nodes]:  # No bias node
             output_list.append(output_node.output_value)
 
         return output_list
@@ -228,6 +231,8 @@ class Population:
                     import_connections = []
                     for connection in net["connections"]:
                         import_connection = Connection(connection["from"], connection["to"], connection["conn_num"], connection["weight"])
+                        if connection["active"] == "False":
+                            import_connection.active = False
                         import_connections.append(import_connection)
                     import_net.all_connections = deepcopy(import_connections)
                     import_net.all_nodes = deepcopy(import_nodes)
@@ -311,7 +316,7 @@ class Population:
                 nodes.append({"layer": node.layer, "connections": node.connections})
             connections = []
             for connection in net.all_connections:
-                connections.append({"from": connection.from_node, "to": connection.to_node, "weight": connection.weight, "conn_num": connection.conn_num})
+                connections.append({"from": connection.from_node, "to": connection.to_node, "weight": connection.weight, "conn_num": connection.conn_num, "active": str(connection.active)})
             final_net_dict = {"last_layer": output_layer, "nodes": nodes, "connections": connections}
             population_dict["nets"].append(final_net_dict)
             net_count += 1

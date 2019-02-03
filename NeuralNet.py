@@ -5,11 +5,13 @@ import json
 from os import path
 from copy import deepcopy
 
+
 def sigmoid(x):
     # print("x", x)
     final_val = 2 / (1 + e**(-x)) - 1
     # print("final_val", final_val)
     return final_val
+
 
 class Node:
 
@@ -115,16 +117,14 @@ class Brain:
                 conn_already_exists = conn_already_exists or self.all_connections[conn].to_node == to_node
         self.add_connection(from_node, to_node, uniform(-1, 1))
 
-    def add_node(self, autolayer=True, splitnode=False, from_layer=0, to_layer=0):
+    def add_node(self, autolayer=True, from_layer=0, to_layer=0):
         new_node = Node()
-        flex_from_layer = from_layer
         if autolayer:
-            if splitnode:
-                if to_layer - from_layer <= 1:
-                    for out_node in self.all_nodes:
-                        if out_node.layer > from_layer:
-                            out_node.layer += 1
-                new_node.layer = from_layer + 1
+            if to_layer - from_layer <= 1:
+                for out_node in self.all_nodes:
+                    if out_node.layer > from_layer:
+                        out_node.layer += 1
+            new_node.layer = from_layer + 1
         self.all_nodes.append(new_node)
         self.node_num += 1
 
@@ -143,26 +143,37 @@ class Brain:
 
         # print(self.all_conn_str_list)
 
-        for node in self.all_nodes:
+        layers = []
+        for i in range(output_layer + 1):
+            layers.append([])
+        for i in range(len(self.all_nodes)):
+            layers[self.all_nodes[i].layer].append(i)
 
-            if node.layer is not 0 and node.layer is not output_layer:  # Don't call activate on input and output nodes
-                node.activate()
+        for layer in layers[:output_layer]:
+            for node_index in layer:
+                node = self.all_nodes[node_index]
 
-            if node.layer is not output_layer:  # Do not feedforward output nodes
-                for conn_num in node.connections:
-                    # print(len(self.all_connections), conn_num)
-                    connection = self.all_connections[conn_num]
-                    self.all_nodes[connection.to_node].input_sum += node.output_value * connection.weight
+                if node.layer is not 0 and node.layer is not output_layer:  # Don't call activate on input and output nodes
+                    node.activate()
 
-        for node in self.all_nodes[self.input_nodes + 1:self.input_nodes + 1 + self.output_nodes]:  # Finally activate output nodes
+                if node.layer is not output_layer:  # Do not feedforward output nodes
+                    # print(node.layer, node.output_value)
+                    for conn_num in node.connections:
+                        # print(len(self.all_connections), conn_num)
+                        connection = self.all_connections[conn_num]
+                        self.all_nodes[connection.to_node].input_sum += node.output_value * connection.weight
+
+        for node in self.all_nodes[self.input_nodes:self.input_nodes + self.output_nodes]:  # Finally activate output nodes
             node.activate()
+            # print(node.layer, node.output_value)
 
     def mutate(self):
 
         if random() <= Brain.mutate_new_connection_prob:
             self.new_rand_connection()
 
-        for connection in self.all_connections:
+        for connection_num in range(0, len(self.all_connections)):
+            connection = self.all_connections[connection_num]
             if connection.active:
                 if random() <= Brain.mutate_change_weight_prob:
                     if random() <= Brain.mutate_new_rand_weight_prob:
@@ -185,7 +196,7 @@ class Brain:
                     #     if self.all_connections[i].conn_num == connection.conn_num:
                     #         del self.all_connections[i]
                     #         break
-                    self.add_node(splitnode=True, from_layer=self.all_nodes[from_node].layer,
+                    self.add_node(from_layer=self.all_nodes[from_node].layer,
                                   to_layer=self.all_nodes[to_node].layer)
                     self.add_connection(from_node, self.node_num, uniform(-1, 1))
                     self.add_connection(self.node_num, to_node, uniform(-1, 1))
@@ -224,6 +235,8 @@ class Population:
                 for net in nets:
                     import_net = Brain(36, 8)
                     import_nodes = []
+                    import_net.node_num = net["node_num"]
+                    import_net.conn_number = net["conn_number"]
                     for node in net["nodes"]:
                         import_node = Node()
                         import_node.layer = node["layer"]
@@ -275,12 +288,12 @@ class Population:
         # new_nets[0].all_conn_str_list = self.all_nets[self.max_fit_index].all_conn_str_list
         new_nets[0].is_best = True
 
-        new_nets[1].all_nodes = deepcopy(self.all_nets[self.max_fit_index2].all_nodes)
-        new_nets[1].all_connections = deepcopy(self.all_nets[self.max_fit_index2].all_connections)
-        new_nets[1].node_num = self.all_nets[self.max_fit_index2].node_num
-        new_nets[1].conn_number = self.all_nets[self.max_fit_index2].conn_number
-        # new_nets[1].all_conn_str_list = self.all_nets[self.max_fit_index].all_conn_str_list
-        new_nets[1].is_best = True
+        # new_nets[1].all_nodes = deepcopy(self.all_nets[self.max_fit_index2].all_nodes)
+        # new_nets[1].all_connections = deepcopy(self.all_nets[self.max_fit_index2].all_connections)
+        # new_nets[1].node_num = self.all_nets[self.max_fit_index2].node_num
+        # new_nets[1].conn_number = self.all_nets[self.max_fit_index2].conn_number
+        # # new_nets[1].all_conn_str_list = self.all_nets[self.max_fit_index].all_conn_str_list
+        # new_nets[1].is_best = True
 
         self.fitness_sum = 0
         for net in self.all_nets:
@@ -318,7 +331,7 @@ class Population:
             connections = []
             for connection in net.all_connections:
                 connections.append({"from": connection.from_node, "to": connection.to_node, "weight": connection.weight, "conn_num": connection.conn_num, "active": str(connection.active)})
-            final_net_dict = {"last_layer": output_layer, "nodes": nodes, "connections": connections}
+            final_net_dict = {"last_layer": output_layer,"node_num": net.node_num, "conn_number": net.conn_number, "nodes": nodes, "connections": connections}
             population_dict["nets"].append(final_net_dict)
             net_count += 1
 

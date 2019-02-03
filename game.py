@@ -5,6 +5,7 @@ from os import environ
 from math import sin, floor, pi, sqrt, tan, atan
 from NeuralNet import Population
 from sys import argv
+from random import uniform
 
 max_frame_rate = 480
 active_game = 0
@@ -294,8 +295,8 @@ class Ball:
                         stick.rot_acc = 0
                 self.pos_x = Table.length / 2
                 self.pos_y = Table.width / 2
-                self.vel_x = 0
-                self.vel_y = 0
+                self.vel_x = uniform(-0.1, 0.1) * Table.ball_max_vel
+                self.vel_y = uniform(-0.1, 0.1) * Table.ball_max_vel
 
         if self.pos_x + Table.ball_radius >= Table.length:  # Right edge collision
             self.pos_x = Table.length - Table.ball_radius - 1
@@ -316,8 +317,8 @@ class Ball:
                         stick.rot_acc = 0
                 self.pos_x = Table.length / 2
                 self.pos_y = Table.width / 2
-                self.vel_x = 0
-                self.vel_y = 0
+                self.vel_x = uniform(-0.1, 0.1) * Table.ball_max_vel
+                self.vel_y = uniform(-0.1, 0.1) * Table.ball_max_vel
 
         if self.pos_y - Table.ball_radius <= 0:  # Upper edge collision
             self.pos_y = Table.ball_radius + 1
@@ -514,7 +515,6 @@ def run_all_games_single_window(games):
 
                 if event.key == pygame.K_s:
                     games[active_game].opponents[0].sticks[0].lin_acc = -Table.key_lin_acc
-                    print("s")
                 elif event.key == pygame.K_x:
                     games[active_game].opponents[0].sticks[0].lin_acc = Table.key_lin_acc
                 if event.key == pygame.K_z:

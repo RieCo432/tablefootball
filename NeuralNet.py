@@ -22,6 +22,7 @@ class Node:
     def activate(self):
         self.output_value = sigmoid(self.input_sum)
 
+
 class Connection:
 
     def __init__(self, from_node, to_node, weight, conn_num):
@@ -230,7 +231,7 @@ class Population:
                         import_nodes.append(import_node)
                     import_connections = []
                     for connection in net["connections"]:
-                        import_connection = Connection(connection["from"], connection["to"], connection["conn_num"], connection["weight"])
+                        import_connection = Connection(connection["from"], connection["to"], connection["weight"], connection["conn_num"])
                         if connection["active"] == "False":
                             import_connection.active = False
                         import_connections.append(import_connection)

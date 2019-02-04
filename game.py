@@ -53,7 +53,7 @@ class Table:
     max_score = 11
 
     game_over_text_color = (0, 255, 0)
-    game_over_text_size = 60
+    game_over_text_size = 45
     game_over_text_font = "Arial"
 
 

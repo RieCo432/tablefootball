@@ -52,6 +52,10 @@ class Table:
     max_game_frames = 36000  # Game is over after 10 minutes max
     max_score = 11
 
+    game_over_text_color = (0, 255, 0)
+    game_over_text_size = 60
+    game_over_text_font = "Arial"
+
 
 class PlayerRole:  # Bind player role to an integer
     keeper = 0
@@ -416,6 +420,7 @@ def run_all_games_single_window(games):
     global show_all_games
 
     all_games_done = False
+    games_still_running = len(games)
 
     last_framerate_update = datetime.now()
     recent_frametimes = []
@@ -670,6 +675,13 @@ def run_all_games_single_window(games):
 
         if not show_all_games:
             games[active_game].draw_all()
+            if games[active_game].game_over:
+                games_still_running = 0
+                for game in games:
+                    if not game.game_over:
+                        games_still_running += 1
+                textsurface = myfont.render('Game over. Running %d/%d games is background...' % (games_still_running, len(games)), False, Table.game_over_text_color)
+                screen.blit(textsurface, (Table.length / 2 - textsurface.get_width() / 2, Table.width / 2 - textsurface.get_height() / 2))
 
         pygame.display.flip()
 
@@ -693,6 +705,8 @@ def run_all_games_single_window(games):
 environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (0, 30)
 pygame.init()
 screen = pygame.display.set_mode((Table.length, Table.width))
+pygame.font.init()
+myfont = pygame.font.SysFont(Table.game_over_text_font, Table.game_over_text_size)
 screen.fill(0)
 
 if len(argv) >= 2:

@@ -288,12 +288,12 @@ class Population:
         # new_nets[0].all_conn_str_list = self.all_nets[self.max_fit_index].all_conn_str_list
         new_nets[0].is_best = True
 
-        # new_nets[1].all_nodes = deepcopy(self.all_nets[self.max_fit_index2].all_nodes)
-        # new_nets[1].all_connections = deepcopy(self.all_nets[self.max_fit_index2].all_connections)
-        # new_nets[1].node_num = self.all_nets[self.max_fit_index2].node_num
-        # new_nets[1].conn_number = self.all_nets[self.max_fit_index2].conn_number
-        # # new_nets[1].all_conn_str_list = self.all_nets[self.max_fit_index].all_conn_str_list
-        # new_nets[1].is_best = True
+        new_nets[1].all_nodes = deepcopy(self.all_nets[self.max_fit_index2].all_nodes)
+        new_nets[1].all_connections = deepcopy(self.all_nets[self.max_fit_index2].all_connections)
+        new_nets[1].node_num = self.all_nets[self.max_fit_index2].node_num
+        new_nets[1].conn_number = self.all_nets[self.max_fit_index2].conn_number
+        # new_nets[1].all_conn_str_list = self.all_nets[self.max_fit_index].all_conn_str_list
+        new_nets[1].is_best = True
 
         self.fitness_sum = 0
         for net in self.all_nets:

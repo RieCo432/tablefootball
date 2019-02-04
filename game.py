@@ -680,7 +680,7 @@ def run_all_games_single_window(games):
                 for game in games:
                     if not game.game_over:
                         games_still_running += 1
-                textsurface = myfont.render('Game over. Running %d/%d games is background...' % (games_still_running, len(games)), False, Table.game_over_text_color)
+                textsurface = myfont.render('Game over. Running %d/%d games in background...' % (games_still_running, len(games)), False, Table.game_over_text_color)
                 screen.blit(textsurface, (Table.length / 2 - textsurface.get_width() / 2, Table.width / 2 - textsurface.get_height() / 2))
 
         pygame.display.flip()

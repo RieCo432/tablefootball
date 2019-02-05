@@ -8,7 +8,7 @@ from copy import deepcopy
 
 def sigmoid(x):
     # print("x", x)
-    final_val = 2 / (1 + e**(-x)) - 1
+    final_val = 2 / (1 + e**(-4.9 * x)) - 1
     # print("final_val", final_val)
     return final_val
 
@@ -75,12 +75,12 @@ class Brain:
 
     def calc_fitness(self, goal_difference_ratio, game_duration_ratio, opponent_fitness_ratio):
         if self.hit_ball:
-            ball_hit_bonus = 3
+            ball_hit_bonus = 0
         else:
             ball_hit_bonus = 0
 
         if self.scored:
-            scored_goal_bonus = 6
+            scored_goal_bonus = 3
         else:
             scored_goal_bonus = 0
 
@@ -165,7 +165,7 @@ class Brain:
 
         for node in self.all_nodes[self.input_nodes:self.input_nodes + self.output_nodes]:  # Finally activate output nodes
             node.activate()
-            # print(node.layer, node.output_value)
+            # print(node.layer, node.input_sum)
 
     def mutate(self):
 

@@ -201,8 +201,8 @@ class Ball:
         self.pos_y = int(round(Table.width / 2))
         self.acc_x = 0
         self.acc_y = 0
-        self.vel_x = 0
-        self.vel_y = 0
+        self.vel_x = uniform(-0.2, 0.2) * Table.ball_max_vel
+        self.vel_y = uniform(-0.2, 0.2) * Table.ball_max_vel
         self.game = game
 
     def check_collision(self):

@@ -521,13 +521,13 @@ def run_all_games_single_window(games):
 
                 # print(outputs1)
 
-                game.opponents[1].sticks[0].lin_acc = outputs1[0] * Table.key_lin_acc
+                game.opponents[1].sticks[0].lin_acc = - outputs1[0] * Table.key_lin_acc
                 game.opponents[1].sticks[0].rot_acc = outputs1[1] * Table.key_rot_acc
-                game.opponents[1].sticks[1].lin_acc = outputs1[2] * Table.key_lin_acc
+                game.opponents[1].sticks[1].lin_acc = - outputs1[2] * Table.key_lin_acc
                 game.opponents[1].sticks[1].rot_acc = outputs1[3] * Table.key_rot_acc
-                game.opponents[1].sticks[2].lin_acc = outputs1[4] * Table.key_lin_acc
+                game.opponents[1].sticks[2].lin_acc = - outputs1[4] * Table.key_lin_acc
                 game.opponents[1].sticks[2].rot_acc = outputs1[5] * Table.key_rot_acc
-                game.opponents[1].sticks[3].lin_acc = outputs1[6] * Table.key_lin_acc
+                game.opponents[1].sticks[3].lin_acc = - outputs1[6] * Table.key_lin_acc
                 game.opponents[1].sticks[3].rot_acc = outputs1[7] * Table.key_rot_acc
 
         for event in pygame.event.get():

@@ -209,7 +209,7 @@ class Brain:
 
 class Population:
 
-    size = 200
+    size = 300
 
     def __init__(self, filename=None):
         self.all_nets = []

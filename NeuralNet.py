@@ -4,11 +4,12 @@ from math import e
 import json
 from os import path
 from copy import deepcopy
+from numpy.random import normal
 
 
 def sigmoid(x):
     # print("x", x)
-    final_val = 2 / (1 + e**(-x)) - 1
+    final_val = 2 / (1 + e**(-4.9 * x)) - 1
     # print("final_val", final_val)
     return final_val
 
@@ -42,8 +43,8 @@ class Brain:
 
     mutate_change_weight_prob = 0.8
     mutate_new_rand_weight_prob = 0.1
-    mutate_new_connection_prob = 0.05
-    mutate_new_node_prob = 0.005
+    mutate_new_connection_prob = 0.08
+    mutate_new_node_prob = 0.01
 
     def __init__(self, input_nodes, output_nodes):
         self.node_num = -1
@@ -73,18 +74,24 @@ class Brain:
         for i in range(1):
             self.new_rand_connection()
 
-    def calc_fitness(self, goal_difference_ratio, game_duration_ratio, opponent_fitness_ratio):
+    def calc_fitness(self, all_arguments):
+
+        fitness_arguments = all_arguments
+
         if self.hit_ball:
-            ball_hit_bonus = 3
+            ball_hit_bonus = 0
         else:
             ball_hit_bonus = 0
 
         if self.scored:
-            scored_goal_bonus = 6
+            scored_goal_bonus = 3
         else:
             scored_goal_bonus = 0
 
-        self.fitness = goal_difference_ratio + game_duration_ratio + opponent_fitness_ratio + ball_hit_bonus + scored_goal_bonus
+        fitness_arguments.append(ball_hit_bonus)
+        fitness_arguments.append(scored_goal_bonus)
+
+        self.fitness = sum(fitness_arguments)
         # print(self.fitness)
 
     def put_input(self, input_data):
@@ -165,12 +172,9 @@ class Brain:
 
         for node in self.all_nodes[self.input_nodes:self.input_nodes + self.output_nodes]:  # Finally activate output nodes
             node.activate()
-            # print(node.layer, node.output_value)
+            # print(node.layer, node.input_sum)
 
     def mutate(self):
-
-        if random() <= Brain.mutate_new_connection_prob:
-            self.new_rand_connection()
 
         for connection_num in range(0, len(self.all_connections)):
             connection = self.all_connections[connection_num]
@@ -179,38 +183,33 @@ class Brain:
                     if random() <= Brain.mutate_new_rand_weight_prob:
                         connection.weight = uniform(-1, 1)
                     else:
-                        change_coefficient = uniform(0.9, 1.1)
-                        connection.weight *= change_coefficient
+                        connection.weight += normal() / 50
                         if connection.weight > 1:
                             connection.weight = 1
                         elif connection.weight < -1:
                             connection.weight = -1
 
-                if random() <= Brain.mutate_new_node_prob:
-                    # connection = self.all_connections[8]
-                    from_node = connection.from_node
-                    to_node = connection.to_node
-                    self.all_nodes[from_node].connections.remove(connection.conn_num)
-                    connection.active = False
-                    # for i in range(0, len(self.all_connections)):
-                    #     if self.all_connections[i].conn_num == connection.conn_num:
-                    #         del self.all_connections[i]
-                    #         break
-                    self.add_node(from_layer=self.all_nodes[from_node].layer,
-                                  to_layer=self.all_nodes[to_node].layer)
-                    self.add_connection(from_node, self.node_num, uniform(-1, 1))
-                    self.add_connection(self.node_num, to_node, uniform(-1, 1))
-                    # from_node = connection.from_node
-                    # to_node = connection.to_node
-                    # self.all_nodes[from_node].connections.remove(connection.conn_num)
-                    # self.add_node(splitnode=True, from_layer=self.all_nodes[from_node].layer, to_layer=self.all_nodes[to_node].layer)
-                    # self.add_connection(from_node, self.node_num, uniform(-1, 1))
-                    # self.add_connection(self.node_num, to_node, uniform(-1, 1))
+        if random() <= Brain.mutate_new_connection_prob:
+            self.new_rand_connection()
+
+        if random() <= Brain.mutate_new_node_prob:
+            rand_conn_i = randint(0, len(self.all_connections) - 1)
+            while not self.all_connections[rand_conn_i].active:
+                rand_conn_i = randint(0, len(self.all_connections) - 1)
+            connection = self.all_connections[rand_conn_i]
+            from_node = connection.from_node
+            to_node = connection.to_node
+            self.all_nodes[from_node].connections.remove(connection.conn_num)
+            connection.active = False
+            self.add_node(from_layer=self.all_nodes[from_node].layer,
+                          to_layer=self.all_nodes[to_node].layer)
+            self.add_connection(from_node, self.node_num, uniform(-1, 1))
+            self.add_connection(self.node_num, to_node, uniform(-1, 1))
 
 
 class Population:
 
-    size = 200
+    size = 300
 
     def __init__(self, filename=None):
         self.all_nets = []
@@ -305,6 +304,7 @@ class Population:
             new_nets[i].all_connections = deepcopy(self.all_nets[parent].all_connections)
             new_nets[i].node_num = self.all_nets[parent].node_num
             new_nets[i].conn_number = self.all_nets[parent].conn_number
+            new_nets[i].is_best = False
             # new_nets[i].all_conn_str_list = self.all_nets[parent].all_conn_str_list
 
         self.all_nets = deepcopy(new_nets)

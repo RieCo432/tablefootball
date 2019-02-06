@@ -56,6 +56,10 @@ class Table:
     game_over_text_size = 45
     game_over_text_font = "Arial"
 
+    goal_argument_coeff = 3
+    duration_argument_coeff = 1
+    opponent_fitness_argument_coeff = 2
+
 
 class PlayerRole:  # Bind player role to an integer
     keeper = 0
@@ -161,7 +165,9 @@ class Opponent:
     def __init__(self, opponent_num, game):
         self.brain = 0
         self.game = game
+        self.opponent_num = opponent_num
         self.score = 0
+        self.own_goals = 0
         self.sticks = []
         self.collision_rects = []  # Store collision rectangles
         for role in range(4):  # Generate 4 sticks with roles 0 to 3 (roles defined as integers in the PlayerRole class)
@@ -204,6 +210,7 @@ class Ball:
         self.vel_x = uniform(-0.2, 0.2) * Table.ball_max_vel
         self.vel_y = uniform(-0.2, 0.2) * Table.ball_max_vel
         self.game = game
+        self.last_player_touched = None
 
     def check_collision(self):
         for opponent in self.game.opponents:
@@ -221,6 +228,7 @@ class Ball:
                         self.vel_x = (- self.vel_x) * Table.player_hit_cin_energy_efficiency + opponent.sticks[collision_box["playerRole"]].rot_vel * Table.player_height  # Change velocity sign and account for energy loss and add player rot speed
                         self.vel_y = self.vel_y * Table.player_hit_cin_energy_efficiency  # Change velocity sign and account for energy loss
                         opponent.brain.hit_ball = True
+                        self.last_player_touched = opponent.opponent_num
 
                 elif (collision_box["center_x"] - Table.player_thickness / 2) <= self.pos_x <= (collision_box["center_x"] + Table.player_thickness / 2):
                     if ((self.pos_y + Table.ball_radius) >= collision_box["center_y"] - Table.player_width / 2) and ((self.pos_y - Table.ball_radius) <= collision_box["center_y"] + Table.player_width / 2):
@@ -231,6 +239,7 @@ class Ball:
                         self.vel_x = self.vel_x * Table.player_hit_cin_energy_efficiency   # Change velocity sign and account for energy loss
                         self.vel_y = (- self.vel_y) * Table.player_hit_cin_energy_efficiency + opponent.sticks[collision_box["playerRole"]].lin_vel  # Change velocity sign and account for energy loss and add player lin speed
                         opponent.brain.hit_ball = True
+                        self.last_player_touched = opponent.opponent_num
 
                 elif (self.pos_x <= collision_box["center_x"] - Table.player_thickness / 2) and (self.pos_y <= collision_box["center_y"] - Table.player_width / 2):  # Upper left corner
                     if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] - Table.player_thickness / 2, collision_box["center_y"] - Table.player_width / 2) <= Table.ball_radius:  # Collisions
@@ -243,6 +252,7 @@ class Ball:
                         self.pos_x = (collision_box["center_x"] - Table.player_thickness / 2) - (Table.ball_radius + 1) / (sqrt(1 + tan_a ** 2))
                         self.pos_y = (self.pos_x - (collision_box["center_x"] - Table.player_thickness / 2)) * tan_a + (collision_box["center_y"] - Table.player_width / 2)
                         opponent.brain.hit_ball = True
+                        self.last_player_touched = opponent.opponent_num
 
                 elif (self.pos_x <= collision_box["center_x"] - Table.player_thickness / 2) and (self.pos_y >= collision_box["center_y"] + Table.player_width / 2):  # Lower left corner
                     if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] - Table.player_thickness / 2, collision_box["center_y"] + Table.player_width / 2) <= Table.ball_radius:  # Collisions
@@ -255,6 +265,7 @@ class Ball:
                         self.pos_x = (collision_box["center_x"] - Table.player_thickness / 2) - (Table.ball_radius + 1) / (sqrt(1 + tan_a ** 2))
                         self.pos_y = ((collision_box["center_x"] - Table.player_thickness / 2) - self.pos_x) * tan_a + (collision_box["center_y"] + Table.player_width / 2)
                         opponent.brain.hit_ball = True
+                        self.last_player_touched = opponent.opponent_num
 
                 elif (self.pos_x >= collision_box["center_x"] + Table.player_thickness / 2) and (self.pos_y <= collision_box["center_y"] - Table.player_width / 2):  # Upper right corner
                     if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] + Table.player_thickness / 2, collision_box["center_y"] - Table.player_width / 2) <= Table.ball_radius:  # Collisions
@@ -267,6 +278,7 @@ class Ball:
                         self.pos_x = + (collision_box["center_x"] + Table.player_thickness / 2) + (Table.ball_radius + 1) / (sqrt(1 + tan_a**2))
                         self.pos_y = ((collision_box["center_x"] + Table.player_thickness / 2) - self.pos_x) * tan_a + (collision_box["center_y"] - Table.player_width / 2)
                         opponent.brain.hit_ball = True
+                        self.last_player_touched = opponent.opponent_num
 
                 elif (self.pos_x >= collision_box["center_x"] + Table.player_thickness / 2) and (self.pos_y >= collision_box["center_y"] + Table.player_width / 2):  # Lower right corner
                     if get_dist(self.pos_x, self.pos_y, collision_box["center_x"] + Table.player_thickness / 2, collision_box["center_y"] + Table.player_width / 2) <= Table.ball_radius:  # Collisions
@@ -279,6 +291,7 @@ class Ball:
                         self.pos_x = + (collision_box["center_x"] + Table.player_thickness / 2) + (Table.ball_radius + 1) / (sqrt(1 + tan_a**2))
                         self.pos_y = (self.pos_x - (collision_box["center_x"] + Table.player_thickness / 2)) * tan_a + (collision_box["center_y"] + Table.player_width / 2)
                         opponent.brain.hit_ball = True
+                        self.last_player_touched = opponent.opponent_num
 
         if self.pos_x - Table.ball_radius <= 0:  # Left edge collision
             self.pos_x = Table.ball_radius + 1
@@ -287,7 +300,12 @@ class Ball:
             if (self.pos_y >= (Table.width / 2 - Table.goal_width / 2)) and (
                     self.pos_y <= (Table.width / 2 + Table.goal_width / 2)):
                 self.game.opponents[1].score += 1
-                self.game.opponents[1].brain.scored = True
+                if self.last_player_touched == 0:
+                    self.game.opponents[0].own_goals += 1
+                    # if self.game.game_num == active_game:
+                    #     print("own goal by player 0")
+                else:
+                    self.game.opponents[1].brain.scored = True
                 self.game.last_goal_frame = self.game.current_frame
                 for opponent in self.game.opponents:
                     for stick in opponent.sticks:
@@ -309,7 +327,12 @@ class Ball:
             if ((self.pos_y - Table.ball_radius) >= (Table.width / 2 - Table.goal_width / 2)) and (
                     (self.pos_y + Table.ball_radius) <= (Table.width / 2 + Table.goal_width / 2)):
                 self.game.opponents[0].score += 1
-                self.game.opponents[0].brain.scored = True
+                if self.last_player_touched == 1:
+                    self.game.opponents[1].own_goals += 1
+                    # if self.game.game_num == active_game:
+                    #     print("own goal by player 1")
+                else:
+                    self.game.opponents[0].brain.scored = True
                 self.game.last_goal_frame = self.game.current_frame
                 for opponent in self.game.opponents:
                     for stick in opponent.sticks:
@@ -420,7 +443,6 @@ def run_all_games_single_window(games):
     global show_all_games
 
     all_games_done = False
-    games_still_running = len(games)
 
     last_framerate_update = datetime.now()
     recent_frametimes = []
@@ -430,80 +452,83 @@ def run_all_games_single_window(games):
     while True and not all_games_done:
 
         for game in games:
-            # print(str(game.game_num))
-            opponent = game.opponents[0]
-            inputs0 = []
-            for stick in opponent.sticks:
-                inputs0.append(stick.lin_pos / stick.lin_range)
-                inputs0.append(stick.lin_vel / Table.player_max_lin_vel)
-                inputs0.append(stick.rot_pos / pi)
-                inputs0.append(stick.rot_vel / Table.player_max_rot_vel)
-            for stick in game.opponents[1].sticks:
-                inputs0.append(stick.lin_pos / stick.lin_range)
-                inputs0.append(stick.lin_vel / Table.player_max_lin_vel)
-                inputs0.append(stick.rot_pos / pi)
-                inputs0.append(stick.rot_vel / Table.player_max_rot_vel)
-            inputs0.append((game.ball.pos_x - Table.length / 2) / (Table.length / 2))
-            inputs0.append(game.ball.vel_x / Table.ball_max_vel)
-            inputs0.append((game.ball.pos_y - Table.width / 2) / (Table.width / 2))
-            inputs0.append(game.ball.vel_y / Table.ball_max_vel)
-            # inputs0.append(Table.player_height / Table.length)
-            # inputs0.append(Table.player_width / Table.width)
-            # inputs0.append(Table.player_thickness / Table.length)
-            # inputs0.append(Table.player_angle_hit_limit / pi)
-            # inputs0.append(Table.ball_radius / Table.length)
 
-            game.opponents[0].brain.put_input(inputs0)
-            game.opponents[0].brain.feed_forward()
-            outputs0 = game.opponents[0].brain.get_outputs()
+            if not game.game_over:
 
-            opponent = game.opponents[1]
-            inputs1 = []
-            for stick in opponent.sticks:
-                inputs1.append(- stick.lin_pos / stick.lin_range)
-                inputs1.append(- stick.lin_vel / Table.player_max_lin_vel)
-                inputs1.append(- stick.rot_pos / pi)
-                inputs1.append(- stick.rot_vel / Table.player_max_rot_vel)
-            for stick in game.opponents[0].sticks:
-                inputs1.append(- stick.lin_pos / stick.lin_range)
-                inputs1.append(- stick.lin_vel / Table.player_max_lin_vel)
-                inputs1.append(- stick.rot_pos / pi)
-                inputs1.append(- stick.rot_vel / Table.player_max_rot_vel)
-            inputs1.append(- (game.ball.pos_x - Table.length / 2) / (Table.length / 2))
-            inputs1.append(- game.ball.vel_x / Table.ball_max_vel)
-            inputs1.append(- (game.ball.pos_y - Table.width / 2) / (Table.width / 2))
-            inputs1.append(- game.ball.vel_y / Table.ball_max_vel)
-            # inputs1.append(Table.player_height / Table.length)
-            # inputs1.append(Table.player_width / Table.width)
-            # inputs1.append(Table.player_thickness / Table.length)
-            # inputs1.append(Table.player_angle_hit_limit / pi)
-            # inputs1.append(Table.ball_radius / Table.length)
+                # print(str(game.game_num))
+                opponent = game.opponents[0]
+                inputs0 = []
+                for stick in opponent.sticks:
+                    inputs0.append(stick.lin_pos / stick.lin_range)
+                    inputs0.append(stick.lin_vel / Table.player_max_lin_vel)
+                    inputs0.append(stick.rot_pos / pi)
+                    inputs0.append(stick.rot_vel / Table.player_max_rot_vel)
+                for stick in game.opponents[1].sticks:
+                    inputs0.append(stick.lin_pos / stick.lin_range)
+                    inputs0.append(stick.lin_vel / Table.player_max_lin_vel)
+                    inputs0.append(stick.rot_pos / pi)
+                    inputs0.append(stick.rot_vel / Table.player_max_rot_vel)
+                inputs0.append((game.ball.pos_x - Table.length / 2) / (Table.length / 2))
+                inputs0.append(game.ball.vel_x / Table.ball_max_vel)
+                inputs0.append((game.ball.pos_y - Table.width / 2) / (Table.width / 2))
+                inputs0.append(game.ball.vel_y / Table.ball_max_vel)
+                # inputs0.append(Table.player_height / Table.length)
+                # inputs0.append(Table.player_width / Table.width)
+                # inputs0.append(Table.player_thickness / Table.length)
+                # inputs0.append(Table.player_angle_hit_limit / pi)
+                # inputs0.append(Table.ball_radius / Table.length)
 
-            game.opponents[1].brain.put_input(inputs1)
-            game.opponents[1].brain.feed_forward()
-            outputs1 = game.opponents[1].brain.get_outputs()
+                game.opponents[0].brain.put_input(inputs0)
+                game.opponents[0].brain.feed_forward()
+                outputs0 = game.opponents[0].brain.get_outputs()
 
-            # print(outputs0)
+                opponent = game.opponents[1]
+                inputs1 = []
+                for stick in opponent.sticks:
+                    inputs1.append(- stick.lin_pos / stick.lin_range)
+                    inputs1.append(- stick.lin_vel / Table.player_max_lin_vel)
+                    inputs1.append(- stick.rot_pos / pi)
+                    inputs1.append(- stick.rot_vel / Table.player_max_rot_vel)
+                for stick in game.opponents[0].sticks:
+                    inputs1.append(- stick.lin_pos / stick.lin_range)
+                    inputs1.append(- stick.lin_vel / Table.player_max_lin_vel)
+                    inputs1.append(- stick.rot_pos / pi)
+                    inputs1.append(- stick.rot_vel / Table.player_max_rot_vel)
+                inputs1.append(- (game.ball.pos_x - Table.length / 2) / (Table.length / 2))
+                inputs1.append(- game.ball.vel_x / Table.ball_max_vel)
+                inputs1.append(- (game.ball.pos_y - Table.width / 2) / (Table.width / 2))
+                inputs1.append(- game.ball.vel_y / Table.ball_max_vel)
+                # inputs1.append(Table.player_height / Table.length)
+                # inputs1.append(Table.player_width / Table.width)
+                # inputs1.append(Table.player_thickness / Table.length)
+                # inputs1.append(Table.player_angle_hit_limit / pi)
+                # inputs1.append(Table.ball_radius / Table.length)
 
-            game.opponents[0].sticks[0].lin_acc = outputs0[0] * Table.key_lin_acc
-            game.opponents[0].sticks[0].rot_acc = outputs0[1] * Table.key_rot_acc
-            game.opponents[0].sticks[1].lin_acc = outputs0[2] * Table.key_lin_acc
-            game.opponents[0].sticks[1].rot_acc = outputs0[3] * Table.key_rot_acc
-            game.opponents[0].sticks[2].lin_acc = outputs0[4] * Table.key_lin_acc
-            game.opponents[0].sticks[2].rot_acc = outputs0[5] * Table.key_rot_acc
-            game.opponents[0].sticks[3].lin_acc = outputs0[6] * Table.key_lin_acc
-            game.opponents[0].sticks[3].rot_acc = outputs0[7] * Table.key_rot_acc
+                game.opponents[1].brain.put_input(inputs1)
+                game.opponents[1].brain.feed_forward()
+                outputs1 = game.opponents[1].brain.get_outputs()
 
-            # print(outputs1)
+                # print(outputs0)
 
-            game.opponents[1].sticks[0].lin_acc = - outputs1[0] * Table.key_lin_acc
-            game.opponents[1].sticks[0].rot_acc = - outputs1[1] * Table.key_rot_acc
-            game.opponents[1].sticks[1].lin_acc = - outputs1[2] * Table.key_lin_acc
-            game.opponents[1].sticks[1].rot_acc = - outputs1[3] * Table.key_rot_acc
-            game.opponents[1].sticks[2].lin_acc = - outputs1[4] * Table.key_lin_acc
-            game.opponents[1].sticks[2].rot_acc = - outputs1[5] * Table.key_rot_acc
-            game.opponents[1].sticks[3].lin_acc = - outputs1[6] * Table.key_lin_acc
-            game.opponents[1].sticks[3].rot_acc = - outputs1[7] * Table.key_rot_acc
+                game.opponents[0].sticks[0].lin_acc = outputs0[0] * Table.key_lin_acc
+                game.opponents[0].sticks[0].rot_acc = outputs0[1] * Table.key_rot_acc
+                game.opponents[0].sticks[1].lin_acc = outputs0[2] * Table.key_lin_acc
+                game.opponents[0].sticks[1].rot_acc = outputs0[3] * Table.key_rot_acc
+                game.opponents[0].sticks[2].lin_acc = outputs0[4] * Table.key_lin_acc
+                game.opponents[0].sticks[2].rot_acc = outputs0[5] * Table.key_rot_acc
+                game.opponents[0].sticks[3].lin_acc = outputs0[6] * Table.key_lin_acc
+                game.opponents[0].sticks[3].rot_acc = outputs0[7] * Table.key_rot_acc
+
+                # print(outputs1)
+
+                game.opponents[1].sticks[0].lin_acc = - outputs1[0] * Table.key_lin_acc
+                game.opponents[1].sticks[0].rot_acc = - outputs1[1] * Table.key_rot_acc
+                game.opponents[1].sticks[1].lin_acc = - outputs1[2] * Table.key_lin_acc
+                game.opponents[1].sticks[1].rot_acc = - outputs1[3] * Table.key_rot_acc
+                game.opponents[1].sticks[2].lin_acc = - outputs1[4] * Table.key_lin_acc
+                game.opponents[1].sticks[2].rot_acc = - outputs1[5] * Table.key_rot_acc
+                game.opponents[1].sticks[3].lin_acc = - outputs1[6] * Table.key_lin_acc
+                game.opponents[1].sticks[3].rot_acc = - outputs1[7] * Table.key_rot_acc
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -724,6 +749,7 @@ while True:
         new_game = Game()
         new_game.opponents[0].brain = currentPop.all_nets[i]
         new_game.opponents[1].brain = currentPop.all_nets[i + 1]
+        new_game.game_num = i
         games.append(new_game)
 
     run_all_games_single_window(games)
@@ -731,8 +757,17 @@ while True:
     for game in games:
         fitness0 = game.opponents[0].brain.fitness
         fitness1 = game.opponents[1].brain.fitness
-        game.opponents[0].brain.calc_fitness((game.opponents[0].score - game.opponents[1].score + Table.max_score) / (2 * Table.max_score), (Table.max_game_frames - game.current_frame) / Table.max_game_frames, fitness1 / currentPop.best_fitness)
-        game.opponents[1].brain.calc_fitness((game.opponents[1].score - game.opponents[0].score + Table.max_score) / (2 * Table.max_score), (Table.max_game_frames - game.current_frame) / Table.max_game_frames, fitness0 / currentPop.best_fitness)
+
+        player0_goal_argument = Table.goal_argument_coeff * (game.opponents[0].score - game.opponents[0].own_goals - game.opponents[1].score + 2 * Table.max_score) / (3 * Table.max_score)
+        player0_duration_argument = Table.duration_argument_coeff * (Table.max_game_frames - game.current_frame) / Table.max_game_frames
+        player0_opponent_fitness_argument = Table.opponent_fitness_argument_coeff * (fitness1 / currentPop.best_fitness)
+
+        player1_goal_argument = Table.goal_argument_coeff * (game.opponents[1].score - game.opponents[1].own_goals - game.opponents[0].score + 2 * Table.max_score) / (3 * Table.max_score)
+        player1_duration_argument = Table.duration_argument_coeff * (Table.max_game_frames - game.current_frame) / Table.max_game_frames
+        player1_opponent_fitness_argument = Table.opponent_fitness_argument_coeff * (fitness0 / currentPop.best_fitness)
+
+        game.opponents[0].brain.calc_fitness([player0_goal_argument, player0_duration_argument, player0_opponent_fitness_argument])
+        game.opponents[1].brain.calc_fitness([player1_goal_argument, player1_duration_argument, player1_opponent_fitness_argument])
 
     currentPop.set_best_player()
 

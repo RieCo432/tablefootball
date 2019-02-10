@@ -2,7 +2,7 @@ from datetime import datetime
 import pygame
 from time import sleep
 from os import environ
-from math import sin, floor, pi, sqrt, tan, atan
+from math import sin, floor, pi, sqrt
 from NeuralNet import Population
 from sys import argv
 from random import uniform
@@ -485,19 +485,19 @@ def run_all_games_single_window(games):
                 opponent = game.opponents[1]
                 inputs1 = []
                 for stick in opponent.sticks:
-                    inputs1.append(- stick.lin_pos / stick.lin_range)
-                    inputs1.append(- stick.lin_vel / Table.player_max_lin_vel)
-                    inputs1.append(- stick.rot_pos / pi)
-                    inputs1.append(- stick.rot_vel / Table.player_max_rot_vel)
+                    inputs1.append(stick.lin_pos / stick.lin_range)
+                    inputs1.append(stick.lin_vel / Table.player_max_lin_vel)
+                    inputs1.append(stick.rot_pos / pi)
+                    inputs1.append(stick.rot_vel / Table.player_max_rot_vel)
                 for stick in game.opponents[0].sticks:
-                    inputs1.append(- stick.lin_pos / stick.lin_range)
-                    inputs1.append(- stick.lin_vel / Table.player_max_lin_vel)
-                    inputs1.append(- stick.rot_pos / pi)
-                    inputs1.append(- stick.rot_vel / Table.player_max_rot_vel)
+                    inputs1.append(stick.lin_pos / stick.lin_range)
+                    inputs1.append(stick.lin_vel / Table.player_max_lin_vel)
+                    inputs1.append(stick.rot_pos / pi)
+                    inputs1.append(stick.rot_vel / Table.player_max_rot_vel)
                 inputs1.append(- (game.ball.pos_x - Table.length / 2) / (Table.length / 2))
                 inputs1.append(- game.ball.vel_x / Table.ball_max_vel)
-                inputs1.append(- (game.ball.pos_y - Table.width / 2) / (Table.width / 2))
-                inputs1.append(- game.ball.vel_y / Table.ball_max_vel)
+                inputs1.append((game.ball.pos_y - Table.width / 2) / (Table.width / 2))
+                inputs1.append(game.ball.vel_y / Table.ball_max_vel)
                 # inputs1.append(Table.player_height / Table.length)
                 # inputs1.append(Table.player_width / Table.width)
                 # inputs1.append(Table.player_thickness / Table.length)
@@ -521,13 +521,13 @@ def run_all_games_single_window(games):
 
                 # print(outputs1)
 
-                game.opponents[1].sticks[0].lin_acc = - outputs1[0] * Table.key_lin_acc
+                game.opponents[1].sticks[0].lin_acc = outputs1[0] * Table.key_lin_acc
                 game.opponents[1].sticks[0].rot_acc = outputs1[1] * Table.key_rot_acc
-                game.opponents[1].sticks[1].lin_acc = - outputs1[2] * Table.key_lin_acc
+                game.opponents[1].sticks[1].lin_acc = outputs1[2] * Table.key_lin_acc
                 game.opponents[1].sticks[1].rot_acc = outputs1[3] * Table.key_rot_acc
-                game.opponents[1].sticks[2].lin_acc = - outputs1[4] * Table.key_lin_acc
+                game.opponents[1].sticks[2].lin_acc = outputs1[4] * Table.key_lin_acc
                 game.opponents[1].sticks[2].rot_acc = outputs1[5] * Table.key_rot_acc
-                game.opponents[1].sticks[3].lin_acc = - outputs1[6] * Table.key_lin_acc
+                game.opponents[1].sticks[3].lin_acc = outputs1[6] * Table.key_lin_acc
                 game.opponents[1].sticks[3].rot_acc = outputs1[7] * Table.key_rot_acc
 
         for event in pygame.event.get():
